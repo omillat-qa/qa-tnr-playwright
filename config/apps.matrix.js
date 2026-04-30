@@ -4,6 +4,8 @@
 
 'use strict';
 
+const path   = require('path');
+const ROOT   = path.resolve(__dirname, '..');
 const { getUrl } = require('./environments');
 
 // Définition des browsers disponibles
@@ -38,7 +40,7 @@ function makeProjects(app, testDir, matrix) {
     for (const browser of browsers) {
       projects.push({
         name: `${browser}-${env}-${app}`,
-        testDir,
+        testDir: path.join(ROOT, testDir),
         use: {
           ...COMMON_USE,
           ...BROWSERS[browser],
