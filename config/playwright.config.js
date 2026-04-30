@@ -11,9 +11,7 @@ module.exports = defineConfig({
 
   // Point d'entrée : playwright cherche les tests via la matrice
   // (chaque projet définit son propre testDir)
-  testDir: './apps',
 
-  timeout: 60_000,
 
   // En CI : 1 retry pour absorber les faux positifs visuels
   retries: process.env.CI ? 1 : 0,
@@ -28,7 +26,7 @@ module.exports = defineConfig({
     ['list'],   // output console lisible pour Jenkins
   ],
 
-  globalSetup: './config/global-setup.js',
+  globalSetup: require.resolve('./global-setup.js'),
 
   // Options screenshot/assertions
   expect: {
