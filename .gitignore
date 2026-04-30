@@ -1,0 +1,30 @@
+# Credentials - JAMAIS commités
+.env
+.env.local
+secrets/
+
+# Artifacts de run Playwright
+playwright-report/
+playwright-results/
+test-results/
+allure-results/
+allure-report/
+
+# Captures debug (générées à la volée)
+errors/
+*.png
+*.html
+
+# Node
+node_modules/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Historique de runs (généré en CI)
+test-history/
