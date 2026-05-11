@@ -10,6 +10,7 @@ secrets/
 playwright-report/
 playwright-results/
 test-results/
+test-output/
 allure-results/
 allure-report/
 

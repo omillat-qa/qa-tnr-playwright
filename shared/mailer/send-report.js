@@ -175,18 +175,25 @@ function genererHTML(results, { app, env, rapportUrl }) {
 // Main
 // ---------------------------------------------------------------------------
 async function main() {
-  // Charger .env
-  try {
-    require('dotenv').config({ path: path.resolve(__dirname, '../../.env.local'), quiet: true });
-    require('dotenv').config({ path: path.resolve(__dirname, '../../.env'), quiet: true });
-  } catch {}
+  // Charger .env.local en priorité puis .env
+  const dotenv = require('dotenv');
+  const envFiles = [
+    path.resolve(__dirname, '../../.env.local'),
+    path.resolve(__dirname, '../../.env'),
+  ];
+  for (const f of envFiles) {
+    if (fs.existsSync(f)) {
+      dotenv.config({ path: f, override: false });
+      break;
+    }
+  }
 
   const args = parseArgs();
   const app  = args.app  || 'compliance-v2';
   const env  = args.env  || 'ua';
   const rapportUrl = args.rapport || '';
 
-  const resultsFile = path.resolve(__dirname, '../../playwright-report/tnr-results.json');
+  const resultsFile = path.resolve(__dirname, '../../test-output/tnr-results.json');
   if (!fs.existsSync(resultsFile)) {
     console.error('[mailer] tnr-results.json introuvable — run Playwright d\'abord');
     process.exit(1);

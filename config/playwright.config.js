@@ -4,8 +4,10 @@
 
 'use strict';
 
+const path           = require('path');
+const ROOT           = path.resolve(__dirname, '..');
 const { defineConfig } = require('@playwright/test');
-const { matrix } = require('./apps.matrix');
+const { matrix }     = require('./apps.matrix');
 
 module.exports = defineConfig({
 
@@ -24,7 +26,7 @@ module.exports = defineConfig({
 
   // Reporter : HTML natif Playwright + reporter TNR custom
   reporter: [
-    ['html', { open: 'never', outputFolder: 'playwright-report' }],
+    ['html', { open: 'never', outputFolder: path.join(ROOT, 'playwright-report') }],
     ['list'],
     [require.resolve('../shared/reporter/tnr-reporter.js')],
   ],

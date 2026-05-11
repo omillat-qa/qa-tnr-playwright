@@ -8,7 +8,7 @@
 const fs   = require('fs');
 const path = require('path');
 
-const METRICS_FILE = path.resolve(__dirname, '../../playwright-report/metrics.json');
+const METRICS_FILE = path.resolve(__dirname, '../../test-output/metrics.json');
 
 /**
  * Mesure la durée d'une action et l'enregistre dans metrics.json

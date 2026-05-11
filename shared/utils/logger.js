@@ -7,7 +7,7 @@
 const fs   = require('fs');
 const path = require('path');
 
-const LOG_DIR  = path.resolve(__dirname, '../../playwright-report');
+const LOG_DIR  = path.resolve(__dirname, '../../test-output');
 const LOG_FILE = path.join(LOG_DIR, 'log_tests.txt');
 
 function getHorodatageParis() {

@@ -8,7 +8,7 @@
 const fs   = require('fs');
 const path = require('path');
 
-const OUTPUT_DIR  = path.resolve(__dirname, '../../playwright-report');
+const OUTPUT_DIR  = path.resolve(__dirname, '../../test-output');
 const OUTPUT_FILE = path.join(OUTPUT_DIR, 'tnr-results.json');
 
 class TnrReporter {
@@ -25,7 +25,7 @@ class TnrReporter {
 
     // Remettre metrics.json à zéro pour ce run
     try {
-      const metricsFile = path.resolve(__dirname, '../../playwright-report/metrics.json');
+      const metricsFile = path.resolve(__dirname, '../../test-output/metrics.json');
       const dir = path.dirname(metricsFile);
       if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(metricsFile, JSON.stringify([], null, 2));
