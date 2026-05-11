@@ -3,6 +3,9 @@
 .env.local
 secrets/
 
+# Sessions storageState - JAMAIS committées (contiennent des tokens)
+.auth/
+
 # Artifacts de run Playwright
 playwright-report/
 playwright-results/

@@ -8,6 +8,11 @@ const path   = require('path');
 const ROOT   = path.resolve(__dirname, '..');
 const { getUrl } = require('./environments');
 
+// Fichiers de session storageState
+const AUTH = {
+  'cfb-v2': path.join(ROOT, '.auth/cfb-v2.json'),
+};
+
 // Définition des browsers disponibles
 const BROWSERS = {
   chromium: { browserName: 'chromium' },
@@ -60,6 +65,26 @@ function makeProjects(app, testDir, matrix) {
 
 const matrix = [
 
+  // ----------------------------------------------------------
+  // SETUP — login unique avant les tests (storageState)
+  // ----------------------------------------------------------
+
+  {
+    name: 'setup-cfb-v2-ua',
+    testDir: path.join(ROOT, 'apps/compliance/setup'),
+    testMatch: '**/*.setup.js',
+    use: {
+      ...COMMON_USE,
+      browserName: 'chromium',
+      baseURL: getUrl('compliance-v2', 'ua'),
+    },
+    metadata: { app: 'compliance-v2', env: 'ua', browser: 'chromium' },
+  },
+
+  // ----------------------------------------------------------
+  // ELLIPRO RISK
+  // ----------------------------------------------------------
+
   ...makeProjects('ellipro-risk', './apps/ellipro-risk/tests', {
     ua:   ['chromium', 'firefox', 'edge', 'webkit'],
     prod: ['chromium', 'edge'],
@@ -78,6 +103,10 @@ const matrix = [
     prod: ['chromium'],
   }),
 
+  // ----------------------------------------------------------
+  // COMPLIANCE v1
+  // ----------------------------------------------------------
+
   ...makeProjects('compliance-v1', './apps/compliance/tests', {
     ua:   ['chromium', 'firefox', 'edge', 'webkit'],
     prod: ['chromium', 'firefox', 'edge'],
@@ -85,12 +114,62 @@ const matrix = [
     dev:  ['chromium'],
   }),
 
-  ...makeProjects('compliance-v2', './apps/compliance/tests', {
-    ua:   ['chromium', 'firefox', 'edge', 'webkit'],
-    prod: ['chromium', 'firefox', 'edge'],
-    ia:   ['chromium'],
-    dev:  ['chromium'],
-  }),
+  // ----------------------------------------------------------
+  // COMPLIANCE v2 — dépend du setup-cfb-v2-ua
+  // ----------------------------------------------------------
+
+  {
+    name: 'chromium-ua-compliance-v2',
+    testDir: path.join(ROOT, 'apps/compliance/tests'),
+    use: {
+      ...COMMON_USE,
+      browserName: 'chromium',
+      baseURL: getUrl('compliance-v2', 'ua'),
+      storageState: AUTH['cfb-v2'],   // session réutilisée
+    },
+    dependencies: ['setup-cfb-v2-ua'],
+    metadata: { app: 'compliance-v2', env: 'ua', browser: 'chromium' },
+  },
+  {
+    name: 'firefox-ua-compliance-v2',
+    testDir: path.join(ROOT, 'apps/compliance/tests'),
+    use: {
+      ...COMMON_USE,
+      browserName: 'firefox',
+      baseURL: getUrl('compliance-v2', 'ua'),
+      storageState: AUTH['cfb-v2'],
+    },
+    dependencies: ['setup-cfb-v2-ua'],
+    metadata: { app: 'compliance-v2', env: 'ua', browser: 'firefox' },
+  },
+  {
+    name: 'edge-ua-compliance-v2',
+    testDir: path.join(ROOT, 'apps/compliance/tests'),
+    use: {
+      ...COMMON_USE,
+      channel: 'msedge',
+      baseURL: getUrl('compliance-v2', 'ua'),
+      storageState: AUTH['cfb-v2'],
+    },
+    dependencies: ['setup-cfb-v2-ua'],
+    metadata: { app: 'compliance-v2', env: 'ua', browser: 'edge' },
+  },
+  {
+    name: 'webkit-ua-compliance-v2',
+    testDir: path.join(ROOT, 'apps/compliance/tests'),
+    use: {
+      ...COMMON_USE,
+      browserName: 'webkit',
+      baseURL: getUrl('compliance-v2', 'ua'),
+      storageState: AUTH['cfb-v2'],
+    },
+    dependencies: ['setup-cfb-v2-ua'],
+    metadata: { app: 'compliance-v2', env: 'ua', browser: 'webkit' },
+  },
+
+  // ----------------------------------------------------------
+  // ORANGE / KEYCLOAK / RELEVE CONSO
+  // ----------------------------------------------------------
 
   ...makeProjects('orange', './apps/orange/tests', {
     ua:   ['chromium', 'firefox', 'edge', 'webkit'],

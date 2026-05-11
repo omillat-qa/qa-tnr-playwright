@@ -1,0 +1,14 @@
+{
+  "arthemis": {
+    "siren": "851889063",
+    "denomination": "ARTHEMIS"
+  },
+  "urls": {
+    "portefeuille": "/folders"
+  },
+  "labels": {
+    "portefeuille": "Portefeuille",
+    "nbDossiers": "Nombre de dossiers total",
+    "aucunResultat": "Aucun résultat"
+  }
+}

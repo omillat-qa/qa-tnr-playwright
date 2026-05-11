@@ -13,6 +13,7 @@ async function acceptAnyCookieBanner(page) {
     '#acceptCookiesBtn',
     '#qcCmpButtons #acceptCookiesBtn',
     '#qcCmpUi button#acceptCookiesBtn',
+    'button:has-text("J\'ACCEPTE")',   // Compliance for Business (majuscules)
     'button:has-text("J\'accepte")',
     'button:has-text("Accepter")',
     'button:has-text("Accept")',
@@ -21,9 +22,9 @@ async function acceptAnyCookieBanner(page) {
   for (const sel of selectors) {
     try {
       const el = page.locator(sel).first();
-      if (await el.isVisible({ timeout: 1000 }).catch(() => false)) {
-        await el.click({ timeout: 1500 }).catch(() => {});
-        await page.waitForTimeout(250);
+      if (await el.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await el.click({ timeout: 3000 }).catch(() => {});
+        await page.waitForTimeout(500);
         break;
       }
     } catch {
@@ -32,4 +33,21 @@ async function acceptAnyCookieBanner(page) {
   }
 }
 
-module.exports = { acceptAnyCookieBanner };
+/**
+ * Ferme la popup d'annonce si présente (bouton FERMER)
+ * Compliance for Business affiche parfois une popup d'actualité après login
+ * @param {import('@playwright/test').Page} page
+ */
+async function closeAnnouncementPopup(page) {
+  try {
+    const btn = page.getByRole('button', { name: 'FERMER' }).first();
+    if (await btn.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await btn.click({ timeout: 3000 }).catch(() => {});
+      await page.waitForTimeout(300);
+    }
+  } catch {
+    // Silencieux — pas de popup = normal
+  }
+}
+
+module.exports = { acceptAnyCookieBanner, closeAnnouncementPopup };
