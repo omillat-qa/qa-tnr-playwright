@@ -4,6 +4,7 @@
 // Page Object — Portefeuille (page /folders) Compliance for Business v2
 
 const { ajouterLog } = require('../../../shared/utils/logger');
+const { mesurer }    = require('../../../shared/utils/metrics');
 
 class PortefeuillePage {
 
@@ -55,8 +56,10 @@ class PortefeuillePage {
   // ---------------------------------------------------------------------------
 
   async allerAuPortefeuille() {
-    await this.lienMenuPortefeuille.click();
-    await this.page.waitForURL('**/folders**');
+    await mesurer('portefeuille.chargement', async () => {
+      await this.lienMenuPortefeuille.click();
+      await this.page.waitForURL('**/folders**');
+    }, { app: 'compliance-v2' });
     ajouterLog('Navigation vers le Portefeuille', 'Portefeuille', 'info');
   }
 

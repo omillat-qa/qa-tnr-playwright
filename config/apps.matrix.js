@@ -10,7 +10,8 @@ const { getUrl } = require('./environments');
 
 // Fichiers de session storageState
 const AUTH = {
-  'cfb-v2': path.join(ROOT, '.auth/cfb-v2.json'),
+  'cfb-ua':   path.join(ROOT, '.auth/cfb-ua.json'),
+  'cfb-prod': path.join(ROOT, '.auth/cfb-prod.json'),
 };
 
 // Définition des browsers disponibles
@@ -81,6 +82,18 @@ const matrix = [
     metadata: { app: 'compliance-v2', env: 'ua', browser: 'chromium' },
   },
 
+  {
+    name: 'setup-cfb-v2-prod',
+    testDir: path.join(ROOT, 'apps/compliance/setup'),
+    testMatch: '**/*.setup.js',
+    use: {
+      ...COMMON_USE,
+      browserName: 'chromium',
+      baseURL: getUrl('compliance-v2', 'prod'),
+    },
+    metadata: { app: 'compliance-v2', env: 'prod', browser: 'chromium' },
+  },
+
   // ----------------------------------------------------------
   // ELLIPRO RISK
   // ----------------------------------------------------------
@@ -115,7 +128,7 @@ const matrix = [
   }),
 
   // ----------------------------------------------------------
-  // COMPLIANCE v2 — dépend du setup-cfb-v2-ua
+  // COMPLIANCE v2 UA — dépend du setup-cfb-v2-ua
   // ----------------------------------------------------------
 
   {
@@ -125,7 +138,7 @@ const matrix = [
       ...COMMON_USE,
       browserName: 'chromium',
       baseURL: getUrl('compliance-v2', 'ua'),
-      storageState: AUTH['cfb-v2'],   // session réutilisée
+      storageState: AUTH['cfb-ua'],
     },
     dependencies: ['setup-cfb-v2-ua'],
     metadata: { app: 'compliance-v2', env: 'ua', browser: 'chromium' },
@@ -137,7 +150,7 @@ const matrix = [
       ...COMMON_USE,
       browserName: 'firefox',
       baseURL: getUrl('compliance-v2', 'ua'),
-      storageState: AUTH['cfb-v2'],
+      storageState: AUTH['cfb-ua'],
     },
     dependencies: ['setup-cfb-v2-ua'],
     metadata: { app: 'compliance-v2', env: 'ua', browser: 'firefox' },
@@ -149,7 +162,7 @@ const matrix = [
       ...COMMON_USE,
       channel: 'msedge',
       baseURL: getUrl('compliance-v2', 'ua'),
-      storageState: AUTH['cfb-v2'],
+      storageState: AUTH['cfb-ua'],
     },
     dependencies: ['setup-cfb-v2-ua'],
     metadata: { app: 'compliance-v2', env: 'ua', browser: 'edge' },
@@ -161,10 +174,51 @@ const matrix = [
       ...COMMON_USE,
       browserName: 'webkit',
       baseURL: getUrl('compliance-v2', 'ua'),
-      storageState: AUTH['cfb-v2'],
+      storageState: AUTH['cfb-ua'],
     },
     dependencies: ['setup-cfb-v2-ua'],
     metadata: { app: 'compliance-v2', env: 'ua', browser: 'webkit' },
+  },
+
+  // ----------------------------------------------------------
+  // COMPLIANCE v2 PROD — dépend du setup-cfb-v2-prod
+  // ----------------------------------------------------------
+
+  {
+    name: 'chromium-prod-compliance-v2',
+    testDir: path.join(ROOT, 'apps/compliance/tests'),
+    use: {
+      ...COMMON_USE,
+      browserName: 'chromium',
+      baseURL: getUrl('compliance-v2', 'prod'),
+      storageState: AUTH['cfb-prod'],
+    },
+    dependencies: ['setup-cfb-v2-prod'],
+    metadata: { app: 'compliance-v2', env: 'prod', browser: 'chromium' },
+  },
+  {
+    name: 'firefox-prod-compliance-v2',
+    testDir: path.join(ROOT, 'apps/compliance/tests'),
+    use: {
+      ...COMMON_USE,
+      browserName: 'firefox',
+      baseURL: getUrl('compliance-v2', 'prod'),
+      storageState: AUTH['cfb-prod'],
+    },
+    dependencies: ['setup-cfb-v2-prod'],
+    metadata: { app: 'compliance-v2', env: 'prod', browser: 'firefox' },
+  },
+  {
+    name: 'edge-prod-compliance-v2',
+    testDir: path.join(ROOT, 'apps/compliance/tests'),
+    use: {
+      ...COMMON_USE,
+      channel: 'msedge',
+      baseURL: getUrl('compliance-v2', 'prod'),
+      storageState: AUTH['cfb-prod'],
+    },
+    dependencies: ['setup-cfb-v2-prod'],
+    metadata: { app: 'compliance-v2', env: 'prod', browser: 'edge' },
   },
 
   // ----------------------------------------------------------

@@ -4,23 +4,35 @@
   "description": "TNR UI Ellisphere - Playwright",
   "main": "config/playwright.config.js",
   "scripts": {
-    "test": "playwright test --config=config/playwright.config.js",
-    "ui": "playwright test --config=config/playwright.config.js --ui",
-    "tnr:ua": "playwright test --config=config/playwright.config.js --grep @tnr --project=chromium-ua-ellipro-risk",
-    "tnr:prod": "playwright test --config=config/playwright.config.js --grep @tnr --project=chromium-prod-ellipro-risk",
-    "smoke:ua": "playwright test --config=config/playwright.config.js --grep @smoke",
-    "smoke:prod": "playwright test --config=config/playwright.config.js --grep @smoke --project=chromium-prod-ellipro-risk",
-    "tnr:ellipro-risk:ua": "playwright test --config=config/playwright.config.js apps/ellipro-risk/tests",
-    "tnr:compliance:ua": "playwright test --config=config/playwright.config.js apps/compliance/tests",
-    "tnr:orange:ua": "playwright test --config=config/playwright.config.js apps/orange/tests",
-    "tnr:auth": "playwright test --config=config/playwright.config.js --grep @auth",
-    "report": "playwright show-report playwright-report"
+    "test": "playwright test",
+    "ui": "playwright test --ui",
+
+    "tnr:ua": "playwright test --project=chromium-ua",
+    "tnr:prod": "playwright test --project=chromium-prod",
+    "smoke:ua": "playwright test --grep @smoke --project=chromium-ua",
+    "smoke:prod": "playwright test --grep @smoke --project=chromium-prod",
+
+    "tnr:ellipro-risk:ua": "playwright test apps/ellipro-risk --project=chromium-ua",
+    "tnr:compliance:ua": "playwright test apps/compliance --project=chromium-ua",
+    "tnr:orange:ua": "playwright test apps/orange --project=chromium-ua",
+
+    "tnr:auth": "playwright test --grep @auth",
+
+    "report": "playwright show-report",
+    "report:open": "playwright show-report playwright-report",
+
+    "mail:compliance-v2:ua": "node shared/mailer/send-report.js --app=compliance-v2 --env=ua",
+    "mail:compliance-v2:prod": "node shared/mailer/send-report.js --app=compliance-v2 --env=prod",
+    "mail:ellipro-risk:ua": "node shared/mailer/send-report.js --app=ellipro-risk --env=ua",
+    "mail:ellipro-risk:prod": "node shared/mailer/send-report.js --app=ellipro-risk --env=prod",
+    "mail:orange:ua": "node shared/mailer/send-report.js --app=orange --env=ua"
   },
   "keywords": ["playwright", "tnr", "ellisphere", "qa"],
   "author": "Cellule de Test Ellisphere",
   "license": "ISC",
   "devDependencies": {
     "@playwright/test": "^1.53.2",
-    "dotenv": "^17.2.3"
+    "dotenv": "^17.2.3",
+    "nodemailer": "^6.9.16"
   }
 }

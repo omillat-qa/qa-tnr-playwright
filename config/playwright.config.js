@@ -11,7 +11,9 @@ module.exports = defineConfig({
 
   // Point d'entrée : playwright cherche les tests via la matrice
   // (chaque projet définit son propre testDir)
+  testDir: './apps',
 
+  timeout: 60_000,
 
   // En CI : 1 retry pour absorber les faux positifs visuels
   retries: process.env.CI ? 1 : 0,
@@ -20,10 +22,11 @@ module.exports = defineConfig({
   // Activer en CI si les envs le permettent
   workers: process.env.CI ? 2 : 1,
 
-  // Reporter : HTML natif Playwright uniquement
+  // Reporter : HTML natif Playwright + reporter TNR custom
   reporter: [
     ['html', { open: 'never', outputFolder: 'playwright-report' }],
-    ['list'],   // output console lisible pour Jenkins
+    ['list'],
+    [require.resolve('../shared/reporter/tnr-reporter.js')],
   ],
 
   globalSetup: require.resolve('./global-setup.js'),
