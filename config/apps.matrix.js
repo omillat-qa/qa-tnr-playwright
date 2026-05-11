@@ -10,8 +10,10 @@ const { getUrl } = require('./environments');
 
 // Fichiers de session storageState
 const AUTH = {
-  'cfb-ua':   path.join(ROOT, '.auth/cfb-ua.json'),
-  'cfb-prod': path.join(ROOT, '.auth/cfb-prod.json'),
+  'cfb-ua':            path.join(ROOT, '.auth/cfb-ua.json'),
+  'cfb-prod':          path.join(ROOT, '.auth/cfb-prod.json'),
+  'ellipro-risk-ua':   path.join(ROOT, '.auth/ellipro-risk-ua.json'),
+  'ellipro-risk-prod': path.join(ROOT, '.auth/ellipro-risk-prod.json'),
 };
 
 // Définition des browsers disponibles
@@ -95,7 +97,35 @@ const matrix = [
   },
 
   // ----------------------------------------------------------
-  // ELLIPRO RISK
+  // ELLIPRO RISK — SETUP
+  // ----------------------------------------------------------
+
+  {
+    name: 'setup-ellipro-risk-ua',
+    testDir: path.join(ROOT, 'apps/ellipro-risk/setup'),
+    testMatch: '**/*.setup.js',
+    use: {
+      ...COMMON_USE,
+      browserName: 'chromium',
+      baseURL: getUrl('ellipro-risk', 'ua'),
+    },
+    metadata: { app: 'ellipro-risk', env: 'ua', browser: 'chromium' },
+  },
+
+  {
+    name: 'setup-ellipro-risk-prod',
+    testDir: path.join(ROOT, 'apps/ellipro-risk/setup'),
+    testMatch: '**/*.setup.js',
+    use: {
+      ...COMMON_USE,
+      browserName: 'chromium',
+      baseURL: getUrl('ellipro-risk', 'prod'),
+    },
+    metadata: { app: 'ellipro-risk', env: 'prod', browser: 'chromium' },
+  },
+
+  // ----------------------------------------------------------
+  // ELLIPRO RISK — TNR
   // ----------------------------------------------------------
 
   ...makeProjects('ellipro-risk', './apps/ellipro-risk/tests', {
@@ -104,6 +134,36 @@ const matrix = [
     ia:   ['chromium'],
     dev:  ['chromium'],
   }),
+
+  // ----------------------------------------------------------
+  // ELLIPRO RISK — PERF RECHERCHE SOLR
+  // ----------------------------------------------------------
+
+  {
+    name: 'perf-recherche-ellipro-risk-ua',
+    testDir: path.join(ROOT, 'apps/ellipro-risk/tests/recherche'),
+    use: {
+      ...COMMON_USE,
+      browserName: 'chromium',
+      baseURL: getUrl('ellipro-risk', 'ua'),
+      storageState: AUTH['ellipro-risk-ua'],
+    },
+    dependencies: ['setup-ellipro-risk-ua'],
+    metadata: { app: 'ellipro-risk', env: 'ua', browser: 'chromium' },
+  },
+
+  {
+    name: 'perf-recherche-ellipro-risk-prod',
+    testDir: path.join(ROOT, 'apps/ellipro-risk/tests/recherche'),
+    use: {
+      ...COMMON_USE,
+      browserName: 'chromium',
+      baseURL: getUrl('ellipro-risk', 'prod'),
+      storageState: AUTH['ellipro-risk-prod'],
+    },
+    dependencies: ['setup-ellipro-risk-prod'],
+    metadata: { app: 'ellipro-risk', env: 'prod', browser: 'chromium' },
+  },
 
   ...makeProjects('ellipro-mod-dec', './apps/ellipro-mod-dec/tests', {
     ua:   ['chromium', 'firefox', 'edge', 'webkit'],
