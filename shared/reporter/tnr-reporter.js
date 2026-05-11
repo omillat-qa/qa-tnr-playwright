@@ -111,8 +111,74 @@ class TnrReporter {
       console.log('\n--- Récap modules ---');
       output.recap_modules.forEach(m => console.log(m.libelle));
       console.log('-------------------\n');
+
+      // Archiver les métriques pour les courbes de tendance Grafana
+      this._archiverMetrics(output);
+
     } catch (e) {
       console.error('[TNR Reporter] Erreur écriture résultats:', e.message);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Archivage historique — accumule les runs sans écraser
+  // ---------------------------------------------------------------------------
+
+  _archiverMetrics(output) {
+    try {
+      const metricsFile = path.join(OUTPUT_DIR, 'metrics.json');
+      if (!fs.existsSync(metricsFile)) return;
+
+      const metricsRun = JSON.parse(fs.readFileSync(metricsFile, 'utf8'));
+      if (!metricsRun.length) return;
+
+      // Identifier l'app+env du run depuis la première métrique
+      const first   = metricsRun[0];
+      const app     = first.app     || 'unknown';
+      const env     = first.env     || 'unknown';
+      const runDate = new Date(this.runDebut).toISOString().slice(0, 10); // YYYY-MM-DD
+
+      // --- JSON historique ---
+      const histFile = path.join(OUTPUT_DIR, `history-${app}-${env}.json`);
+      let history = [];
+      if (fs.existsSync(histFile)) {
+        try { history = JSON.parse(fs.readFileSync(histFile, 'utf8')); } catch {}
+      }
+
+      // Ajouter le run courant avec son timestamp de run
+      history.push({
+        run_date:  new Date(this.runDebut).toISOString(),
+        app,
+        env,
+        mesures:   metricsRun,
+      });
+
+      // Garder 90 jours max (90 runs quotidiens)
+      if (history.length > 90) history = history.slice(-90);
+      fs.writeFileSync(histFile, JSON.stringify(history, null, 2));
+
+      // --- CSV historique (pour Excel / analyse ponctuelle) ---
+      const csvFile = path.join(OUTPUT_DIR, `history-${app}-${env}.csv`);
+      const csvHeader = 'run_date,timestamp,app,env,motcle,statut,nb_resultats,temps_ux_ms,temps_post_ms\n';
+
+      if (!fs.existsSync(csvFile)) {
+        fs.writeFileSync(csvFile, csvHeader);
+      }
+
+      const lignes = metricsRun
+        .filter(m => m.nom === 'recherche.solr')
+        .map(m =>
+          `${runDate},${m.timestamp},${m.app},${m.env},"${m.motcle}",${m.statut},${m.nb_resultats ?? ''},${m.temps_ux_ms ?? ''},${m.temps_post_ms ?? ''}`
+        )
+        .join('\n');
+
+      if (lignes) fs.appendFileSync(csvFile, lignes + '\n');
+
+      console.log(`[TNR Reporter] Historique mis à jour : history-${app}-${env}.json + .csv`);
+
+    } catch (e) {
+      // Ne jamais faire planter le reporter à cause de l'archivage
+      console.warn('[TNR Reporter] Archivage métriques :', e.message);
     }
   }
 }
