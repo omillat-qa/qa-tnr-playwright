@@ -2,8 +2,9 @@
 
 // shared/mailer/send-report.js
 // Envoi email HTML récap TNR après un run Playwright
-// Usage : node shared/mailer/send-report.js --app=compliance-v2 --env=ua --rapport=\\nas\...
-// Le script lit playwright-report/tnr-results.json généré par le TNR reporter
+// Usage : node shared/mailer/send-report.js --projet=tnr-chromium-ua-compliance-v2 --rapport=\\nas\...
+//      ou node shared/mailer/send-report.js --app=compliance-v2 --env=ua (rétrocompat)
+// Lit test-output/results-[projet].json généré par le TNR reporter
 
 const nodemailer = require('nodemailer');
 const fs         = require('fs');
@@ -71,8 +72,8 @@ function genererHTML(results, { app, env, rapportUrl }) {
   const labelStatut   = run.echecs === 0 ? '✅ SUCCÈS' : `❌ ${run.echecs} ÉCHEC(S)`;
   const dureeMin      = (run.duree_ms / 60000).toFixed(1);
   const dateRun       = new Date(run.debut).toLocaleString('fr-FR', { timeZone: 'Europe/Paris' });
+  const nomProjet     = run.projet || `${app} ${env}`;
 
-  // Lignes du tableau modules
   const lignesModules = modules.map(m => {
     const ok      = m.echecs === 0;
     const couleur = ok ? '#dcfce7' : '#fee2e2';
@@ -89,7 +90,6 @@ function genererHTML(results, { app, env, rapportUrl }) {
       </tr>`;
   }).join('');
 
-  // Tests en échec pour le détail
   const testsEchec = results.tests.filter(t => t.statut !== 'passed' && t.module !== 'Setup');
   const blocEchecs = testsEchec.length > 0 ? `
     <h3 style="color:#dc2626;margin-top:24px">Détail des échecs</h3>
@@ -126,7 +126,7 @@ function genererHTML(results, { app, env, rapportUrl }) {
 
   <div style="background:#1e40af;color:white;padding:16px 24px;border-radius:8px 8px 0 0">
     <h1 style="margin:0;font-size:20px">TNR Playwright — ${appConfig.label}</h1>
-    <p style="margin:4px 0 0;opacity:0.8;font-size:14px">Environnement : ${env.toUpperCase()} | ${dateRun}</p>
+    <p style="margin:4px 0 0;opacity:0.8;font-size:13px">Projet : ${nomProjet} | ${dateRun}</p>
   </div>
 
   <div style="background:#f8fafc;border:1px solid #e5e7eb;padding:16px 24px">
@@ -175,7 +175,6 @@ function genererHTML(results, { app, env, rapportUrl }) {
 // Main
 // ---------------------------------------------------------------------------
 async function main() {
-  // Charger .env.local en priorité puis .env
   const dotenv = require('dotenv');
   const envFiles = [
     path.resolve(__dirname, '../../.env.local'),
@@ -188,14 +187,37 @@ async function main() {
     }
   }
 
-  const args = parseArgs();
-  const app  = args.app  || 'compliance-v2';
-  const env  = args.env  || 'ua';
+  const args       = parseArgs();
   const rapportUrl = args.rapport || '';
 
-  const resultsFile = path.resolve(__dirname, '../../test-output/tnr-results.json');
+  // Accepte --projet=tnr-chromium-ua-compliance-v2
+  // ou --app=compliance-v2 --env=ua (rétrocompatibilité)
+  let app, env, resultsFile;
+
+  if (args.projet) {
+    // Nouveau mode : --projet=tnr-chromium-ua-compliance-v2
+    resultsFile = path.resolve(__dirname, `../../test-output/results-${args.projet}.json`);
+    // Extrait app depuis le nom projet (dernier segment)
+    const parts = args.projet.split('-');
+    env = parts[parts.length - 2] || 'ua';
+    // App = tout après tnr-[browser]-[env]- ou perf-recherche-[env]-
+    app = args.app || parts.slice(3).join('-') || 'compliance-v2';
+  } else {
+    // Ancien mode : --app=compliance-v2 --env=ua
+    app = args.app || 'compliance-v2';
+    env = args.env || 'ua';
+    // Cherche le fichier results le plus récent pour cette app+env
+    const pattern = `results-tnr-chromium-${env}-${app}.json`;
+    resultsFile = path.resolve(__dirname, `../../test-output/${pattern}`);
+    // Fallback sur l'ancien nom
+    if (!fs.existsSync(resultsFile)) {
+      resultsFile = path.resolve(__dirname, '../../test-output/tnr-results.json');
+    }
+  }
+
   if (!fs.existsSync(resultsFile)) {
-    console.error('[mailer] tnr-results.json introuvable — run Playwright d\'abord');
+    console.error(`[mailer] Fichier résultats introuvable : ${resultsFile}`);
+    console.error('[mailer] Lancez d\'abord le run Playwright correspondant');
     process.exit(1);
   }
 
@@ -212,7 +234,6 @@ async function main() {
     : `❌ TNR ${appConfig.label} ${env.toUpperCase()} — ${results.run.echecs} échec(s) sur ${results.run.total}`;
 
   const html = genererHTML(results, { app, env, rapportUrl });
-
   const transporter = nodemailer.createTransport(SMTP);
 
   await transporter.sendMail({

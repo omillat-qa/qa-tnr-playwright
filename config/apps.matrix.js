@@ -2,7 +2,10 @@
 
 // config/apps.matrix.js
 // Matrice : quels browsers sur quels envs pour chaque app
-// C'est ici qu'on décide la couverture — pas dans playwright.config.js
+// Convention de nommage des projets :
+//   setup-[app]-[env]              → ex: setup-compliance-v2-ua
+//   tnr-[browser]-[env]-[app]      → ex: tnr-chromium-ua-compliance-v2
+//   perf-recherche-[env]-[app]     → ex: perf-recherche-ua-ellipro-risk
 
 const path   = require('path');
 const ROOT   = path.resolve(__dirname, '..');
@@ -37,14 +40,19 @@ const COMMON_USE = {
 };
 
 /**
- * Génère les projets Playwright pour une app donnée
+ * Génère les projets TNR pour une app donnée
+ * Nom généré : tnr-[browser]-[env]-[app]
+ * @param {string} app        - clé app (ex: 'ellipro-risk')
+ * @param {string} testDir    - chemin vers les tests de l'app
+ * @param {Object} matrix     - { ua: [...browsers], prod: [...browsers], ... }
+ * @param {string} [testMatch] - pattern optionnel pour filtrer les specs
  */
-function makeProjects(app, testDir, matrix) {
+function makeProjects(app, testDir, matrix, testMatch) {
   const projects = [];
   for (const [env, browsers] of Object.entries(matrix)) {
     for (const browser of browsers) {
-      projects.push({
-        name: `${browser}-${env}-${app}`,
+      const project = {
+        name: `tnr-${browser}-${env}-${app}`,
         testDir: path.join(ROOT, testDir),
         use: {
           ...COMMON_USE,
@@ -52,7 +60,9 @@ function makeProjects(app, testDir, matrix) {
           baseURL: getUrl(app, env),
         },
         metadata: { app, env, browser },
-      });
+      };
+      if (testMatch) project.testMatch = testMatch;
+      projects.push(project);
     }
   }
   return projects;
@@ -65,7 +75,7 @@ const matrix = [
   // ----------------------------------------------------------
 
   {
-    name: 'setup-cfb-v2-ua',
+    name: 'setup-compliance-v2-ua',
     testDir: path.join(ROOT, 'apps/compliance/setup'),
     testMatch: '**/*.setup.js',
     use: {
@@ -77,7 +87,7 @@ const matrix = [
   },
 
   {
-    name: 'setup-cfb-v2-prod',
+    name: 'setup-compliance-v2-prod',
     testDir: path.join(ROOT, 'apps/compliance/setup'),
     testMatch: '**/*.setup.js',
     use: {
@@ -118,6 +128,7 @@ const matrix = [
 
   // ----------------------------------------------------------
   // ELLIPRO RISK — TNR
+  // tnr-[browser]-[env]-ellipro-risk
   // ----------------------------------------------------------
 
   ...makeProjects('ellipro-risk', './apps/ellipro-risk/tests', {
@@ -140,10 +151,11 @@ const matrix = [
 
   // ----------------------------------------------------------
   // ELLIPRO RISK — PERF RECHERCHE SOLR
+  // perf-recherche-[env]-ellipro-risk
   // ----------------------------------------------------------
 
   {
-    name: 'perf-recherche-ellipro-risk-ua',
+    name: 'perf-recherche-ua-ellipro-risk',
     testDir: path.join(ROOT, 'apps/ellipro-risk/tests/recherche'),
     testMatch: '**/perf-recherche.spec.js',
     use: {
@@ -157,7 +169,7 @@ const matrix = [
   },
 
   {
-    name: 'perf-recherche-ellipro-risk-prod',
+    name: 'perf-recherche-prod-ellipro-risk',
     testDir: path.join(ROOT, 'apps/ellipro-risk/tests/recherche'),
     testMatch: '**/perf-recherche.spec.js',
     use: {
@@ -171,22 +183,18 @@ const matrix = [
   },
 
   // ----------------------------------------------------------
-  // COMPLIANCE v1
+  // COMPLIANCE v1 — TODO : specs à migrer depuis UFT
+  // À décommenter quand les specs v1 seront dans apps/compliance-v1/tests/
   // ----------------------------------------------------------
-
-  ...makeProjects('compliance-v1', './apps/compliance/tests', {
-    ua:   ['chromium', 'firefox', 'edge', 'webkit'],
-    prod: ['chromium', 'firefox', 'edge'],
-    ia:   ['chromium'],
-    dev:  ['chromium'],
-  }),
+  // ...makeProjects('compliance-v1', './apps/compliance-v1/tests', { ... })
 
   // ----------------------------------------------------------
-  // COMPLIANCE v2 UA — TNR
+  // COMPLIANCE v2 — TNR
+  // tnr-[browser]-[env]-compliance-v2
   // ----------------------------------------------------------
 
   {
-    name: 'chromium-ua-compliance-v2',
+    name: 'tnr-chromium-ua-compliance-v2',
     testDir: path.join(ROOT, 'apps/compliance/tests'),
     testMatch: '**/portefeuille.spec.js',
     use: {
@@ -195,11 +203,11 @@ const matrix = [
       baseURL: getUrl('compliance-v2', 'ua'),
       storageState: AUTH['cfb-ua'],
     },
-    dependencies: ['setup-cfb-v2-ua'],
+    dependencies: ['setup-compliance-v2-ua'],
     metadata: { app: 'compliance-v2', env: 'ua', browser: 'chromium' },
   },
   {
-    name: 'firefox-ua-compliance-v2',
+    name: 'tnr-firefox-ua-compliance-v2',
     testDir: path.join(ROOT, 'apps/compliance/tests'),
     testMatch: '**/portefeuille.spec.js',
     use: {
@@ -208,11 +216,11 @@ const matrix = [
       baseURL: getUrl('compliance-v2', 'ua'),
       storageState: AUTH['cfb-ua'],
     },
-    dependencies: ['setup-cfb-v2-ua'],
+    dependencies: ['setup-compliance-v2-ua'],
     metadata: { app: 'compliance-v2', env: 'ua', browser: 'firefox' },
   },
   {
-    name: 'edge-ua-compliance-v2',
+    name: 'tnr-edge-ua-compliance-v2',
     testDir: path.join(ROOT, 'apps/compliance/tests'),
     testMatch: '**/portefeuille.spec.js',
     use: {
@@ -221,11 +229,11 @@ const matrix = [
       baseURL: getUrl('compliance-v2', 'ua'),
       storageState: AUTH['cfb-ua'],
     },
-    dependencies: ['setup-cfb-v2-ua'],
+    dependencies: ['setup-compliance-v2-ua'],
     metadata: { app: 'compliance-v2', env: 'ua', browser: 'edge' },
   },
   {
-    name: 'webkit-ua-compliance-v2',
+    name: 'tnr-webkit-ua-compliance-v2',
     testDir: path.join(ROOT, 'apps/compliance/tests'),
     testMatch: '**/portefeuille.spec.js',
     use: {
@@ -234,16 +242,11 @@ const matrix = [
       baseURL: getUrl('compliance-v2', 'ua'),
       storageState: AUTH['cfb-ua'],
     },
-    dependencies: ['setup-cfb-v2-ua'],
+    dependencies: ['setup-compliance-v2-ua'],
     metadata: { app: 'compliance-v2', env: 'ua', browser: 'webkit' },
   },
-
-  // ----------------------------------------------------------
-  // COMPLIANCE v2 PROD — TNR
-  // ----------------------------------------------------------
-
   {
-    name: 'chromium-prod-compliance-v2',
+    name: 'tnr-chromium-prod-compliance-v2',
     testDir: path.join(ROOT, 'apps/compliance/tests'),
     testMatch: '**/portefeuille.spec.js',
     use: {
@@ -252,11 +255,11 @@ const matrix = [
       baseURL: getUrl('compliance-v2', 'prod'),
       storageState: AUTH['cfb-prod'],
     },
-    dependencies: ['setup-cfb-v2-prod'],
+    dependencies: ['setup-compliance-v2-prod'],
     metadata: { app: 'compliance-v2', env: 'prod', browser: 'chromium' },
   },
   {
-    name: 'firefox-prod-compliance-v2',
+    name: 'tnr-firefox-prod-compliance-v2',
     testDir: path.join(ROOT, 'apps/compliance/tests'),
     testMatch: '**/portefeuille.spec.js',
     use: {
@@ -265,11 +268,11 @@ const matrix = [
       baseURL: getUrl('compliance-v2', 'prod'),
       storageState: AUTH['cfb-prod'],
     },
-    dependencies: ['setup-cfb-v2-prod'],
+    dependencies: ['setup-compliance-v2-prod'],
     metadata: { app: 'compliance-v2', env: 'prod', browser: 'firefox' },
   },
   {
-    name: 'edge-prod-compliance-v2',
+    name: 'tnr-edge-prod-compliance-v2',
     testDir: path.join(ROOT, 'apps/compliance/tests'),
     testMatch: '**/portefeuille.spec.js',
     use: {
@@ -278,16 +281,17 @@ const matrix = [
       baseURL: getUrl('compliance-v2', 'prod'),
       storageState: AUTH['cfb-prod'],
     },
-    dependencies: ['setup-cfb-v2-prod'],
+    dependencies: ['setup-compliance-v2-prod'],
     metadata: { app: 'compliance-v2', env: 'prod', browser: 'edge' },
   },
 
   // ----------------------------------------------------------
   // COMPLIANCE v2 — PERF RECHERCHE SOLR
+  // perf-recherche-[env]-compliance-v2
   // ----------------------------------------------------------
 
   {
-    name: 'perf-recherche-compliance-v2-ua',
+    name: 'perf-recherche-ua-compliance-v2',
     testDir: path.join(ROOT, 'apps/compliance/tests'),
     testMatch: '**/perf-recherche.spec.js',
     use: {
@@ -296,12 +300,12 @@ const matrix = [
       baseURL: getUrl('compliance-v2', 'ua'),
       storageState: AUTH['cfb-ua'],
     },
-    dependencies: ['setup-cfb-v2-ua'],
+    dependencies: ['setup-compliance-v2-ua'],
     metadata: { app: 'compliance-v2', env: 'ua', browser: 'chromium' },
   },
 
   {
-    name: 'perf-recherche-compliance-v2-prod',
+    name: 'perf-recherche-prod-compliance-v2',
     testDir: path.join(ROOT, 'apps/compliance/tests'),
     testMatch: '**/perf-recherche.spec.js',
     use: {
@@ -310,7 +314,7 @@ const matrix = [
       baseURL: getUrl('compliance-v2', 'prod'),
       storageState: AUTH['cfb-prod'],
     },
-    dependencies: ['setup-cfb-v2-prod'],
+    dependencies: ['setup-compliance-v2-prod'],
     metadata: { app: 'compliance-v2', env: 'prod', browser: 'chromium' },
   },
 

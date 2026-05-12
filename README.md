@@ -15,93 +15,25 @@ Il couvre deux types de tests :
 
 ---
 
-## 🏗️ Architecture du projet
+## 🏷️ Convention de nommage des projets
 
+Le nom du projet encode **type + browser + env + app** — c'est l'identifiant unique utilisé dans toutes les commandes `--project` et dans les noms de fichiers de sortie.
+
+| Pattern | Exemple | Usage |
+|---------|---------|-------|
+| `setup-[app]-[env]` | `setup-compliance-v2-ua` | Login unique + sauvegarde session |
+| `tnr-[browser]-[env]-[app]` | `tnr-chromium-ua-compliance-v2` | Tests fonctionnels TNR |
+| `perf-recherche-[env]-[app]` | `perf-recherche-ua-ellipro-risk` | Perf recherche Solr (toujours chromium) |
+
+**Pourquoi le browser dans le nom TNR ?**
+Les TNR tournent sur plusieurs browsers (chromium, firefox, edge, webkit). Pour la perf, on n'utilise que chromium (mesures comparables), donc le browser n'est pas dans le nom.
+
+**Fichiers de sortie alignés sur le nom projet :**
 ```
-qa-tnr-playwright/
-├── .auth/                          # Sessions storageState (gitignore — tokens)
-│   ├── cfb-ua.json
-│   ├── cfb-prod.json
-│   ├── ellipro-risk-ua.json
-│   └── ellipro-risk-prod.json
-│
-├── apps/
-│   ├── compliance/
-│   │   ├── pages/
-│   │   │   ├── portefeuille.page.js    # POM Portefeuille CFB v2
-│   │   │   └── recherche.page.js       # POM Recherche Solr CFB v2
-│   │   ├── setup/
-│   │   │   └── auth.setup.js           # Login unique CFB (storageState)
-│   │   └── tests/
-│   │       ├── portefeuille.spec.js    # 17 tests PTF_01 à PTF_10
-│   │       └── perf-recherche.spec.js  # 80 mots-clés recherche Solr
-│   │
-│   └── ellipro-risk/
-│       ├── pages/
-│       │   └── recherche.page.js       # POM Recherche Solr Ellipro Risk
-│       ├── setup/
-│       │   └── auth.setup.js           # Login unique Ellipro Risk
-│       └── tests/
-│           ├── auth/
-│           │   ├── auth.spec.js        # R_001 à R_012 Keycloak
-│           │   └── network.spec.js     # R_013 réseau
-│           └── recherche/
-│               └── perf-recherche.spec.js  # 80 mots-clés Solr
-│
-├── config/
-│   ├── playwright.config.js            # Config principale
-│   ├── apps.matrix.js                  # Matrice browsers × envs × apps
-│   ├── environments.js                 # URLs par app et env
-│   └── global-setup.js                 # Chargement .env.local
-│
-├── shared/
-│   ├── mailer/
-│   │   └── send-report.js              # Email HTML post-run
-│   ├── pages/
-│   │   ├── keycloak.page.js            # POM Keycloak (commun toutes apps)
-│   │   └── consent.page.js             # Gestion cookies + popups
-│   ├── reporter/
-│   │   └── tnr-reporter.js             # Reporter custom → JSON + CSV history
-│   └── utils/
-│       ├── logger.js                   # Logger → test-output/log_tests.txt
-│       └── metrics.js                  # enregistrer() → test-output/metrics.json
-│
-├── test-data/
-│   └── motscles-recherche.json         # 80 mots-clés Solr fixes (ne pas modifier)
-│
-├── test-output/                        # Artifacts de run (gitignore)
-│   ├── tnr-results.json                # Résultats run courant
-│   ├── metrics.json                    # Métriques run courant
-│   ├── log_tests.txt                   # Logs console
-│   ├── history-[app]-[env].json        # Historique 90 jours → Grafana
-│   └── history-[app]-[env].csv         # Historique CSV → Excel
-│
-├── playwright-report/                  # Rapport HTML Playwright (gitignore)
-│   └── index.html
-│
-├── .env.example                        # Template variables d'environnement
-├── .env.local                          # Credentials réels (gitignore — JAMAIS commité)
-└── CONVENTIONS.md                      # Conventions équipe
-```
-
----
-
-## 🚀 Installation
-
-```powershell
-# Cloner le repo
-git clone https://github.com/omillat-qa/qa-tnr-playwright.git
-cd qa-tnr-playwright
-
-# Installer les dépendances
-npm install
-
-# Installer les browsers Playwright
-npx playwright install chromium firefox webkit
-
-# Copier le template de configuration
-copy .env.example .env.local
-# Remplir .env.local avec les credentials (voir section Variables)
+test-output/results-tnr-chromium-ua-compliance-v2.json
+test-output/history-perf-recherche-ua-ellipro-risk.json
+test-output/history-perf-recherche-ua-ellipro-risk.csv
+test-output/logs-tnr-chromium-ua-compliance-v2.txt
 ```
 
 ---
@@ -142,20 +74,22 @@ TNR_ELLIPRO_PROD_PASSWORD=
 npx playwright test --config=config/playwright.config.js --list
 
 # Lister les tests d'un projet spécifique
-npx playwright test --config=config/playwright.config.js --list --project=chromium-ua-compliance-v2
+npx playwright test --config=config/playwright.config.js --list --project=tnr-chromium-ua-compliance-v2
 
 # Lister les tests filtrés par tag ou ID
 npx playwright test --config=config/playwright.config.js --list --grep "PTF_01"
 ```
 
+> 💡 `--list` est très utile pour vérifier ce que Playwright va exécuter **avant** de lancer.
+
 ### Setup (login + sauvegarde session)
 
-> ⚠️ À lancer une fois en début de journée — la session dure plusieurs heures
+> ⚠️ À lancer **une fois en début de journée** — la session dure plusieurs heures (~8h)
 
 ```powershell
 # Compliance v2
-npx playwright test --config=config/playwright.config.js --project=setup-cfb-v2-ua
-npx playwright test --config=config/playwright.config.js --project=setup-cfb-v2-prod
+npx playwright test --config=config/playwright.config.js --project=setup-compliance-v2-ua
+npx playwright test --config=config/playwright.config.js --project=setup-compliance-v2-prod
 
 # Ellipro Risk
 npx playwright test --config=config/playwright.config.js --project=setup-ellipro-risk-ua
@@ -166,28 +100,28 @@ npx playwright test --config=config/playwright.config.js --project=setup-ellipro
 
 ```powershell
 # Compliance v2 UA — tous les tests
-npx playwright test --config=config/playwright.config.js --project=chromium-ua-compliance-v2
+npx playwright test --config=config/playwright.config.js --project=tnr-chromium-ua-compliance-v2
 
-# Compliance v2 UA — avec navigateur visible
-npx playwright test --config=config/playwright.config.js --project=chromium-ua-compliance-v2 --headed
+# Avec navigateur visible
+npx playwright test --config=config/playwright.config.js --project=tnr-chromium-ua-compliance-v2 --headed
 
 # Un seul test
-npx playwright test --config=config/playwright.config.js --project=chromium-ua-compliance-v2 --grep "PTF_01"
+npx playwright test --config=config/playwright.config.js --project=tnr-chromium-ua-compliance-v2 --grep "PTF_01"
 
 # Plusieurs tests
-npx playwright test --config=config/playwright.config.js --project=chromium-ua-compliance-v2 --grep "PTF_01|PTF_03|PTF_08"
+npx playwright test --config=config/playwright.config.js --project=tnr-chromium-ua-compliance-v2 --grep "PTF_01|PTF_03|PTF_08"
 
 # Par tag
-npx playwright test --config=config/playwright.config.js --project=chromium-ua-compliance-v2 --grep "@smoke"
+npx playwright test --config=config/playwright.config.js --project=tnr-chromium-ua-compliance-v2 --grep "@smoke"
 
 # Mode debug pas à pas
-npx playwright test --config=config/playwright.config.js --project=chromium-ua-compliance-v2 --headed --debug --grep "PTF_01"
+npx playwright test --config=config/playwright.config.js --project=tnr-chromium-ua-compliance-v2 --headed --debug --grep "PTF_01"
 
 # Compliance v2 PROD
-npx playwright test --config=config/playwright.config.js --project=chromium-prod-compliance-v2
+npx playwright test --config=config/playwright.config.js --project=tnr-chromium-prod-compliance-v2
 
 # Ellipro Risk UA
-npx playwright test --config=config/playwright.config.js --project=chromium-ua-ellipro-risk
+npx playwright test --config=config/playwright.config.js --project=tnr-chromium-ua-ellipro-risk
 ```
 
 ### Perf recherche Solr
@@ -196,39 +130,36 @@ npx playwright test --config=config/playwright.config.js --project=chromium-ua-e
 
 ```powershell
 # Ellipro Risk UA
-npx playwright test --config=config/playwright.config.js --project=perf-recherche-ellipro-risk-ua
+npx playwright test --config=config/playwright.config.js --project=perf-recherche-ua-ellipro-risk
 
 # Ellipro Risk PROD
-npx playwright test --config=config/playwright.config.js --project=perf-recherche-ellipro-risk-prod
+npx playwright test --config=config/playwright.config.js --project=perf-recherche-prod-ellipro-risk
 
 # Compliance v2 UA
-npx playwright test --config=config/playwright.config.js --project=perf-recherche-compliance-v2-ua
+npx playwright test --config=config/playwright.config.js --project=perf-recherche-ua-compliance-v2
 
 # Compliance v2 PROD
-npx playwright test --config=config/playwright.config.js --project=perf-recherche-compliance-v2-prod
+npx playwright test --config=config/playwright.config.js --project=perf-recherche-prod-compliance-v2
 ```
 
 ### Rapport HTML
 
 ```powershell
-# Ouvrir le dernier rapport dans le navigateur
 npx playwright show-report playwright-report
 ```
 
 ### Email récap
 
 ```powershell
-# Après un run TNR ou perf — envoyer le récap HTML par email
 node shared/mailer/send-report.js --app=compliance-v2 --env=ua --rapport=\\nas01\tnr\rapport\index.html
-node shared/mailer/send-report.js --app=compliance-v2 --env=prod
 node shared/mailer/send-report.js --app=ellipro-risk --env=ua
 ```
 
 ### UI Playwright (mode interactif)
 
 ```powershell
-# Ouvrir l'interface graphique Playwright
-# ⚠️ Lancer le setup d'abord pour que les sessions soient disponibles
+# Lancer le setup d'abord, puis ouvrir l'UI
+npx playwright test --config=config/playwright.config.js --project=setup-compliance-v2-ua
 npx playwright test --config=config/playwright.config.js --ui
 ```
 
@@ -253,25 +184,23 @@ npx playwright test --config=config/playwright.config.js --ui
 
 | Fichier | Contenu | Usage |
 |---------|---------|-------|
-| `test-output/tnr-results.json` | Résultats run courant (pass/fail, durées) | Email récap, CI |
-| `test-output/metrics.json` | Métriques perf run courant | Debug |
-| `test-output/log_tests.txt` | Logs console horodatés | Debug |
-| `test-output/history-[app]-[env].json` | Historique 90 jours | **Grafana / Pushgateway** |
-| `test-output/history-[app]-[env].csv` | Historique 90 jours | **Excel / analyse ponctuelle** |
+| `test-output/results-[projet].json` | Résultats run courant | Email récap, CI |
+| `test-output/logs-[projet].txt` | Logs console horodatés | Debug |
+| `test-output/history-[projet].json` | Historique 90 jours | **Grafana / Pushgateway** |
+| `test-output/history-[projet].csv` | Historique CSV | **Excel / analyse ponctuelle** |
 
 ### Structure CSV historique
 
 ```
 run_date,timestamp,app,env,motcle,statut,nb_resultats,temps_ux_ms,temps_post_ms
 2026-05-12,2026-05-12T08:00:01Z,ellipro-risk,ua,"Renault",ok,10310,935,613
-2026-05-12,2026-05-12T08:00:07Z,ellipro-risk,ua,"CAC",ok,1505,940,584
 ```
 
 ### Roadmap métriques
 
 - [x] Collecte JSON + CSV local après chaque run
 - [ ] Pushgateway Prometheus (à confirmer avec infra)
-- [ ] Dashboard Grafana — courbes de tendance temps UX / POST par app, env, mot-clé
+- [ ] Dashboard Grafana — courbes de tendance temps UX / POST
 
 ---
 
@@ -303,7 +232,7 @@ Pipeline nocturne (cron 02:00)
 | Tag | Usage |
 |-----|-------|
 | `@tnr` | Tous les tests TNR fonctionnels |
-| `@smoke` | Tests critiques post-déploiement (sous-ensemble rapide) |
+| `@smoke` | Tests critiques post-déploiement |
 | `@auth` | Tests d'authentification |
 | `@portefeuille` | Module portefeuille Compliance |
 
@@ -317,10 +246,10 @@ Pipeline nocturne (cron 02:00)
 ### Commits
 
 ```
-type(app): description
 feat(compliance): ajout PTF_11 test filtre équipe
 fix(ellipro-risk): correction timeout recherche Solr
 chore(config): mise à jour matrice browsers
+docs: mise à jour README
 ```
 
 ---
@@ -339,5 +268,6 @@ chore(config): mise à jour matrice browsers
 - **`.env.local` ne doit JAMAIS être commité** — contient les credentials
 - **`.auth/*.json` ne doit JAMAIS être commité** — contient les tokens de session
 - **`test-output/` ne doit JAMAIS être commité** — artifacts de run
-- **Les mots-clés `motscles-recherche.json` sont fixes** — les modifier casse la comparaison historique Grafana
-- **Les tests perf ne doivent PAS être parallélisés** — les mesures seraient faussées
+- **`motscles-recherche.json` sont fixes** — les modifier casse l'historique Grafana
+- **Les tests perf ne doivent PAS être parallélisés** — mesures faussées
+- **Le setup doit être lancé une fois par journée** avant tous les runs
