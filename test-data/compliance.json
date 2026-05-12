@@ -1,14 +1,58 @@
 {
   "arthemis": {
-    "siren": "851889063",
-    "denomination": "ARTHEMIS"
+    "denomination": "ARTHEMIS",
+    "siren": "851889063"
   },
   "urls": {
-    "portefeuille": "/folders"
+    "dashboard":    "/dashboard",
+    "portefeuille": "/folders",
+    "evaluation":   "/evaluation/new",
+    "notconfigured": "/notconfigured"
   },
-  "labels": {
-    "portefeuille": "Portefeuille",
-    "nbDossiers": "Nombre de dossiers total",
-    "aucunResultat": "Aucun résultat"
+  "users": {
+    "ua": {
+      "admin": {
+        "username_env": "TNR_CFB_UA_ADMIN_USERNAME",
+        "password_env": "TNR_CFB_UA_ADMIN_PASSWORD",
+        "email":   "CFBv2_TNR@nomail.dns",
+        "id":      "NN425476",
+        "contrat": "45317",
+        "profil":  "Administrateur"
+      },
+      "collab": {
+        "username_env": "TNR_CFB_UA_COLLAB_USERNAME",
+        "password_env": "TNR_CFB_UA_COLLAB_PASSWORD",
+        "email":   "cfbv2_collab_tnr@nomail.dns",
+        "id":      "NN425540",
+        "contrat": "45317",
+        "profil":  "Collaborateur"
+      },
+      "referent": {
+        "username_env": "TNR_CFB_UA_REFERENT_USERNAME",
+        "password_env": "TNR_CFB_UA_REFERENT_PASSWORD",
+        "email":   "cfbv2_referent_tnr@nomail.dns",
+        "id":      "NN425541",
+        "contrat": "45317",
+        "profil":  "Référent"
+      },
+      "noparam": {
+        "username_env": "TNR_CFB_UA_NOPARAM_USERNAME",
+        "password_env": "TNR_CFB_UA_NOPARAM_PASSWORD",
+        "email":   "cfbv2_noparam_collab_tnr@nomail.dns",
+        "id":      "",
+        "contrat": "",
+        "profil":  "noparam"
+      }
+    },
+    "prod": {
+      "admin": {
+        "username_env": "TNR_CFB_PROD_ADMIN_USERNAME",
+        "password_env": "TNR_CFB_PROD_ADMIN_PASSWORD",
+        "email":   "CFBv2_TNR@nomail.dns",
+        "id":      "NN434037",
+        "contrat": "50614",
+        "profil":  "Administrateur"
+      }
+    }
   }
 }

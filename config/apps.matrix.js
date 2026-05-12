@@ -13,10 +13,15 @@ const { getUrl } = require('./environments');
 
 // Fichiers de session storageState
 const AUTH = {
-  'cfb-ua':            path.join(ROOT, '.auth/cfb-ua.json'),
-  'cfb-prod':          path.join(ROOT, '.auth/cfb-prod.json'),
-  'ellipro-risk-ua':   path.join(ROOT, '.auth/ellipro-risk-ua.json'),
-  'ellipro-risk-prod': path.join(ROOT, '.auth/ellipro-risk-prod.json'),
+  'cfb-ua':              path.join(ROOT, '.auth/cfb-ua-admin.json'),
+  'cfb-prod':            path.join(ROOT, '.auth/cfb-prod-admin.json'),
+  'cfb-ua-admin':        path.join(ROOT, '.auth/cfb-ua-admin.json'),
+  'cfb-prod-admin':      path.join(ROOT, '.auth/cfb-prod-admin.json'),
+  'cfb-ua-collab':       path.join(ROOT, '.auth/cfb-ua-collab.json'),
+  'cfb-ua-referent':     path.join(ROOT, '.auth/cfb-ua-referent.json'),
+  'cfb-ua-noparam':      path.join(ROOT, '.auth/cfb-ua-noparam.json'),
+  'ellipro-risk-ua':     path.join(ROOT, '.auth/ellipro-risk-ua.json'),
+  'ellipro-risk-prod':   path.join(ROOT, '.auth/ellipro-risk-prod.json'),
 };
 
 // Définition des browsers disponibles
@@ -71,31 +76,43 @@ function makeProjects(app, testDir, matrix, testMatch) {
 const matrix = [
 
   // ----------------------------------------------------------
-  // SETUP COMPLIANCE v2
+  // SETUP COMPLIANCE v2 — multi-profil
   // ----------------------------------------------------------
 
   {
     name: 'setup-compliance-v2-ua',
     testDir: path.join(ROOT, 'apps/compliance/setup'),
     testMatch: '**/*.setup.js',
-    use: {
-      ...COMMON_USE,
-      browserName: 'chromium',
-      baseURL: getUrl('compliance-v2', 'ua'),
-    },
-    metadata: { app: 'compliance-v2', env: 'ua', browser: 'chromium' },
+    use: { ...COMMON_USE, browserName: 'chromium', baseURL: getUrl('compliance-v2', 'ua') },
+    metadata: { app: 'compliance-v2', env: 'ua', browser: 'chromium', profil: 'admin' },
   },
-
   {
     name: 'setup-compliance-v2-prod',
     testDir: path.join(ROOT, 'apps/compliance/setup'),
     testMatch: '**/*.setup.js',
-    use: {
-      ...COMMON_USE,
-      browserName: 'chromium',
-      baseURL: getUrl('compliance-v2', 'prod'),
-    },
-    metadata: { app: 'compliance-v2', env: 'prod', browser: 'chromium' },
+    use: { ...COMMON_USE, browserName: 'chromium', baseURL: getUrl('compliance-v2', 'prod') },
+    metadata: { app: 'compliance-v2', env: 'prod', browser: 'chromium', profil: 'admin' },
+  },
+  {
+    name: 'setup-compliance-v2-ua-collab',
+    testDir: path.join(ROOT, 'apps/compliance/setup'),
+    testMatch: '**/*.setup.js',
+    use: { ...COMMON_USE, browserName: 'chromium', baseURL: getUrl('compliance-v2', 'ua') },
+    metadata: { app: 'compliance-v2', env: 'ua', browser: 'chromium', profil: 'collab' },
+  },
+  {
+    name: 'setup-compliance-v2-ua-referent',
+    testDir: path.join(ROOT, 'apps/compliance/setup'),
+    testMatch: '**/*.setup.js',
+    use: { ...COMMON_USE, browserName: 'chromium', baseURL: getUrl('compliance-v2', 'ua') },
+    metadata: { app: 'compliance-v2', env: 'ua', browser: 'chromium', profil: 'referent' },
+  },
+  {
+    name: 'setup-compliance-v2-ua-noparam',
+    testDir: path.join(ROOT, 'apps/compliance/setup'),
+    testMatch: '**/*.setup.js',
+    use: { ...COMMON_USE, browserName: 'chromium', baseURL: getUrl('compliance-v2', 'ua') },
+    metadata: { app: 'compliance-v2', env: 'ua', browser: 'chromium', profil: 'noparam' },
   },
 
   // ----------------------------------------------------------
@@ -189,7 +206,65 @@ const matrix = [
   // ...makeProjects('compliance-v1', './apps/compliance-v1/tests', { ... })
 
   // ----------------------------------------------------------
-  // COMPLIANCE v2 — TNR
+  // COMPLIANCE v2 — TNR DASHBOARD (multi-profil)
+  // tnr-chromium-[env]-[profil]-compliance-v2
+  // ----------------------------------------------------------
+
+  {
+    name: 'tnr-chromium-ua-admin-compliance-v2',
+    testDir: path.join(ROOT, 'apps/compliance/tests'),
+    testMatch: '**/dashboard.spec.js',
+    use: {
+      ...COMMON_USE,
+      browserName: 'chromium',
+      baseURL: getUrl('compliance-v2', 'ua'),
+      storageState: AUTH['cfb-ua-admin'],
+    },
+    dependencies: ['setup-compliance-v2-ua'],
+    metadata: { app: 'compliance-v2', env: 'ua', browser: 'chromium', profil: 'admin' },
+  },
+  {
+    name: 'tnr-chromium-ua-collab-compliance-v2',
+    testDir: path.join(ROOT, 'apps/compliance/tests'),
+    testMatch: '**/dashboard.spec.js',
+    use: {
+      ...COMMON_USE,
+      browserName: 'chromium',
+      baseURL: getUrl('compliance-v2', 'ua'),
+      storageState: AUTH['cfb-ua-collab'],
+    },
+    dependencies: ['setup-compliance-v2-ua-collab'],
+    metadata: { app: 'compliance-v2', env: 'ua', browser: 'chromium', profil: 'collab' },
+  },
+  {
+    name: 'tnr-chromium-ua-referent-compliance-v2',
+    testDir: path.join(ROOT, 'apps/compliance/tests'),
+    testMatch: '**/dashboard.spec.js',
+    use: {
+      ...COMMON_USE,
+      browserName: 'chromium',
+      baseURL: getUrl('compliance-v2', 'ua'),
+      storageState: AUTH['cfb-ua-referent'],
+    },
+    dependencies: ['setup-compliance-v2-ua-referent'],
+    metadata: { app: 'compliance-v2', env: 'ua', browser: 'chromium', profil: 'referent' },
+  },
+  {
+    name: 'tnr-chromium-ua-noparam-compliance-v2',
+    testDir: path.join(ROOT, 'apps/compliance/tests'),
+    testMatch: '**/dashboard.spec.js',
+    use: {
+      ...COMMON_USE,
+      browserName: 'chromium',
+      baseURL: getUrl('compliance-v2', 'ua'),
+      storageState: AUTH['cfb-ua-noparam'],
+    },
+    dependencies: ['setup-compliance-v2-ua-noparam'],
+    metadata: { app: 'compliance-v2', env: 'ua', browser: 'chromium', profil: 'noparam' },
+  },
+
+  // ----------------------------------------------------------
+  // COMPLIANCE v2 — TNR PORTEFEUILLE
   // tnr-[browser]-[env]-compliance-v2
   // ----------------------------------------------------------
 
