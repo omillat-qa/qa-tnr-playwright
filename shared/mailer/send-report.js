@@ -11,13 +11,12 @@
 //     → prend un run spécifique
 //
 //   node shared/mailer/send-report.js --app=compliance-v2 --rapport=\\nas\...
-//     → ajoute un lien vers le rapport
+//     → ajoute un bouton cliquable vers le rapport HTML
 
 const nodemailer = require('nodemailer');
 const fs         = require('fs');
 const path       = require('path');
 
-// Chargement .env.local en priorité
 (function chargerEnv() {
   const dotenv = require('dotenv');
   const envFiles = [
@@ -38,11 +37,11 @@ const SMTP = {
 const FROM = process.env.SMTP_FROM || 'devqtp02@ellisphere.com';
 
 const APPS_CONFIG = {
-  'compliance-v2':  { label: 'Compliance for Business v2', destinataires: (process.env.MAIL_COMPLIANCE_V2 || '').split(',').filter(Boolean) },
-  'compliance-v1':  { label: 'Compliance v1',              destinataires: (process.env.MAIL_COMPLIANCE_V1 || '').split(',').filter(Boolean) },
-  'ellipro-risk':   { label: 'Ellipro Risk',               destinataires: (process.env.MAIL_ELLIPRO_RISK  || '').split(',').filter(Boolean) },
-  'ellipro-mod-dec':{ label: 'Ellipro Modulaire/Déc',      destinataires: (process.env.MAIL_ELLIPRO_MOD_DEC || '').split(',').filter(Boolean) },
-  'orange':         { label: 'Web Orange',                  destinataires: (process.env.MAIL_ORANGE || '').split(',').filter(Boolean) },
+  'compliance-v2':   { label: 'Compliance for Business v2', destinataires: (process.env.MAIL_COMPLIANCE_V2    || '').split(',').filter(Boolean) },
+  'compliance-v1':   { label: 'Compliance v1',              destinataires: (process.env.MAIL_COMPLIANCE_V1    || '').split(',').filter(Boolean) },
+  'ellipro-risk':    { label: 'Ellipro Risk',               destinataires: (process.env.MAIL_ELLIPRO_RISK     || '').split(',').filter(Boolean) },
+  'ellipro-mod-dec': { label: 'Ellipro Modulaire/Déc',      destinataires: (process.env.MAIL_ELLIPRO_MOD_DEC  || '').split(',').filter(Boolean) },
+  'orange':          { label: 'Web Orange',                  destinataires: (process.env.MAIL_ORANGE           || '').split(',').filter(Boolean) },
 };
 
 function parseArgs() {
@@ -54,9 +53,6 @@ function parseArgs() {
   return args;
 }
 
-// ---------------------------------------------------------------------------
-// Trouve le run le plus récent dans test-output/runs/
-// ---------------------------------------------------------------------------
 function trouverDernierRun(runsDir, runId) {
   if (runId) {
     const p = path.join(runsDir, runId, 'results.json');
@@ -78,14 +74,41 @@ function trouverDernierRun(runsDir, runId) {
 function genererHTML(results, { app, rapportUrl }) {
   const appConfig = APPS_CONFIG[app] || { label: app };
   const run       = results.run;
-  const modules   = results.recap_modules;
+  const modules   = results.recap_modules  || [];
+  const projets   = results.recap_projets  || [];
 
   const couleurStatut = run.echecs === 0 ? '#16a34a' : '#dc2626';
   const labelStatut   = run.echecs === 0 ? '✅ SUCCÈS' : `❌ ${run.echecs} ÉCHEC(S)`;
   const dureeMin      = (run.duree_ms / 60000).toFixed(1);
   const dateRun       = new Date(run.debut).toLocaleString('fr-FR', { timeZone: 'Europe/Paris' });
-  const envLabel      = run.projets?.join(', ') || app;
+  const nbProjets     = run.projets?.length || 1;
 
+  // ---------------------------------------------------------------------------
+  // KPIs
+  // ---------------------------------------------------------------------------
+  const kpis = `
+    <div style="display:flex;gap:12px;margin-bottom:20px">
+      <div style="background:white;border:1px solid #e5e7eb;border-radius:8px;padding:12px 16px;text-align:center;flex:1">
+        <div style="font-size:20px;font-weight:bold;color:${couleurStatut}">${labelStatut}</div>
+        <div style="font-size:11px;color:#6b7280;margin-top:2px">Statut global</div>
+      </div>
+      <div style="background:white;border:1px solid #e5e7eb;border-radius:8px;padding:12px 16px;text-align:center;flex:1">
+        <div style="font-size:22px;font-weight:bold">${run.passes}/${run.total}</div>
+        <div style="font-size:11px;color:#6b7280;margin-top:2px">Tests passés</div>
+      </div>
+      <div style="background:white;border:1px solid #e5e7eb;border-radius:8px;padding:12px 16px;text-align:center;flex:1">
+        <div style="font-size:22px;font-weight:bold">${dureeMin} min</div>
+        <div style="font-size:11px;color:#6b7280;margin-top:2px">Durée</div>
+      </div>
+      <div style="background:white;border:1px solid #e5e7eb;border-radius:8px;padding:12px 16px;text-align:center;flex:1">
+        <div style="font-size:22px;font-weight:bold">${run.skips || 0}</div>
+        <div style="font-size:11px;color:#6b7280;margin-top:2px">Ignorés (skip)</div>
+      </div>
+    </div>`;
+
+  // ---------------------------------------------------------------------------
+  // Tableau par module
+  // ---------------------------------------------------------------------------
   const lignesModules = modules.map(m => {
     const ok      = m.echecs === 0;
     const couleur = ok ? '#dcfce7' : '#fee2e2';
@@ -97,75 +120,112 @@ function genererHTML(results, { app, rapportUrl }) {
         <td style="padding:8px 12px;border:1px solid #e5e7eb">${icone} ${m.module}${infoSkip}</td>
         <td style="padding:8px 12px;border:1px solid #e5e7eb;text-align:center">${m.passes}/${m.total}</td>
         <td style="padding:8px 12px;border:1px solid #e5e7eb;text-align:center">${pct}%</td>
-        <td style="padding:8px 12px;border:1px solid #e5e7eb;text-align:center;color:${m.echecs > 0 ? '#dc2626' : '#16a34a'};font-weight:bold">
-          ${m.echecs > 0 ? m.echecs + ' erreur(s)' : 'OK'}
+        <td style="padding:8px 12px;border:1px solid #e5e7eb;text-align:center;color:${ok ? '#16a34a' : '#dc2626'};font-weight:bold">
+          ${ok ? 'OK' : m.echecs + ' erreur(s)'}
         </td>
       </tr>`;
   }).join('');
 
-  const testsEchec = results.tests.filter(t => t.statut === 'failed' || t.statut === 'timedOut');
-  const testsSkip  = results.tests.filter(t => t.statut === 'skipped' && t.module !== 'Setup');
+  // ---------------------------------------------------------------------------
+  // Tableau par projet (uniquement si > 1 projet)
+  // ---------------------------------------------------------------------------
+  const blocProjets = nbProjets > 1 && projets.length > 0 ? `
+    <h3 style="color:#1e40af;margin-top:24px;margin-bottom:10px;font-size:15px">Résultats par projet</h3>
+    <table style="border-collapse:collapse;width:100%;font-size:13px">
+      <thead><tr style="background:#1e40af;color:white">
+        <th style="padding:8px 12px;border:1px solid #e5e7eb;text-align:left">Projet</th>
+        <th style="padding:8px 12px;border:1px solid #e5e7eb;text-align:center">Passés</th>
+        <th style="padding:8px 12px;border:1px solid #e5e7eb;text-align:center">Taux</th>
+        <th style="padding:8px 12px;border:1px solid #e5e7eb;text-align:center">Statut</th>
+      </tr></thead>
+      <tbody>
+        ${projets.map(p => {
+          const ok  = p.echecs === 0;
+          const pct = p.total > 0 ? Math.round((p.passes / p.total) * 100) : 100;
+          return `
+          <tr style="background:${ok ? '#dcfce7' : '#fee2e2'}">
+            <td style="padding:7px 12px;border:1px solid #e5e7eb;font-family:monospace;font-size:12px">${p.projet}</td>
+            <td style="padding:7px 12px;border:1px solid #e5e7eb;text-align:center">${p.passes}/${p.total}</td>
+            <td style="padding:7px 12px;border:1px solid #e5e7eb;text-align:center">${pct}%</td>
+            <td style="padding:7px 12px;border:1px solid #e5e7eb;text-align:center;color:${ok ? '#16a34a' : '#dc2626'};font-weight:bold">
+              ${ok ? 'OK' : p.echecs + ' erreur(s)'}
+            </td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>` : '';
 
+  // ---------------------------------------------------------------------------
+  // Détail des échecs
+  // ---------------------------------------------------------------------------
+  const testsEchec = results.tests.filter(t => t.statut === 'failed' || t.statut === 'timedOut');
   const blocEchecs = testsEchec.length > 0 ? `
-    <h3 style="color:#dc2626;margin-top:24px">Détail des échecs</h3>
+    <h3 style="color:#dc2626;margin-top:24px;margin-bottom:10px;font-size:15px">Détail des échecs</h3>
     <table style="border-collapse:collapse;width:100%;font-size:13px">
       <thead><tr style="background:#fee2e2">
         <th style="padding:8px 12px;border:1px solid #e5e7eb;text-align:left">ID</th>
+        <th style="padding:8px 12px;border:1px solid #e5e7eb;text-align:left">Projet</th>
         <th style="padding:8px 12px;border:1px solid #e5e7eb;text-align:left">Test</th>
         <th style="padding:8px 12px;border:1px solid #e5e7eb;text-align:left">Erreur</th>
       </tr></thead>
       <tbody>
         ${testsEchec.map(t => `
           <tr>
-            <td style="padding:8px 12px;border:1px solid #e5e7eb;font-weight:bold">${t.id || '-'}</td>
-            <td style="padding:8px 12px;border:1px solid #e5e7eb">${t.titre}</td>
-            <td style="padding:8px 12px;border:1px solid #e5e7eb;color:#dc2626;font-size:12px">${t.erreur || '-'}</td>
+            <td style="padding:7px 12px;border:1px solid #e5e7eb;font-weight:bold">${t.id || '-'}</td>
+            <td style="padding:7px 12px;border:1px solid #e5e7eb;font-family:monospace;font-size:11px;color:#6b7280">${t.projet}</td>
+            <td style="padding:7px 12px;border:1px solid #e5e7eb">${t.titre}</td>
+            <td style="padding:7px 12px;border:1px solid #e5e7eb;color:#dc2626;font-size:12px">${t.erreur || '-'}</td>
           </tr>`).join('')}
       </tbody>
     </table>` : '';
 
+  // ---------------------------------------------------------------------------
+  // Tests ignorés
+  // ---------------------------------------------------------------------------
+  const testsSkip = results.tests.filter(t => t.statut === 'skipped' && t.module !== 'Setup');
   const blocSkips = testsSkip.length > 0 ? `
-    <h3 style="color:#6b7280;margin-top:16px;font-size:14px">Tests ignorés (fixme / skip)</h3>
+    <h3 style="color:#6b7280;margin-top:20px;margin-bottom:8px;font-size:13px">Tests ignorés (fixme / skip)</h3>
     <table style="border-collapse:collapse;width:100%;font-size:12px">
       <tbody>
         ${testsSkip.map(t => `
           <tr style="background:#f9fafb">
-            <td style="padding:6px 12px;border:1px solid #e5e7eb;color:#6b7280;font-weight:bold">${t.id || '-'}</td>
+            <td style="padding:6px 12px;border:1px solid #e5e7eb;color:#6b7280;font-weight:bold;width:80px">${t.id || '-'}</td>
             <td style="padding:6px 12px;border:1px solid #e5e7eb;color:#6b7280">${t.titre}</td>
           </tr>`).join('')}
       </tbody>
     </table>` : '';
 
+  // ---------------------------------------------------------------------------
+  // Lien rapport
+  // ---------------------------------------------------------------------------
   const lienRapport = rapportUrl
     ? `<p style="margin-top:20px">
         <a href="${rapportUrl}" style="background:#2563eb;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:bold">
           📊 Voir le rapport complet
         </a>
-      </p>` : '';
+      </p>`
+    : `<p style="margin-top:20px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;padding:12px 16px;font-size:13px;color:#475569">
+        <strong>Rapport HTML local :</strong><br>
+        <code style="background:#e2e8f0;padding:2px 6px;border-radius:4px">npx playwright show-report</code>
+        &nbsp;— à lancer depuis la racine du projet
+      </p>`;
 
+  // ---------------------------------------------------------------------------
+  // Assemblage final
+  // ---------------------------------------------------------------------------
   return `<!DOCTYPE html>
 <html lang="fr">
 <head><meta charset="UTF-8"></head>
 <body style="font-family:Arial,sans-serif;max-width:800px;margin:0 auto;padding:20px;color:#1f2937">
   <div style="background:#1e40af;color:white;padding:16px 24px;border-radius:8px 8px 0 0">
     <h1 style="margin:0;font-size:20px">TNR Playwright — ${appConfig.label}</h1>
-    <p style="margin:4px 0 0;opacity:0.8;font-size:13px">Run : ${run.id} | ${dateRun}</p>
+    <p style="margin:4px 0 0;opacity:0.8;font-size:13px">
+      Run : ${run.id} | ${dateRun}${nbProjets > 1 ? ` | ${nbProjets} projets` : ''}
+    </p>
   </div>
   <div style="background:#f8fafc;border:1px solid #e5e7eb;padding:16px 24px">
-    <div style="display:flex;gap:24px;margin-bottom:20px">
-      <div style="background:white;border:1px solid #e5e7eb;border-radius:8px;padding:12px 20px;text-align:center;min-width:100px">
-        <div style="font-size:24px;font-weight:bold;color:${couleurStatut}">${labelStatut}</div>
-      </div>
-      <div style="background:white;border:1px solid #e5e7eb;border-radius:8px;padding:12px 20px;text-align:center">
-        <div style="font-size:24px;font-weight:bold">${run.passes}/${run.total}</div>
-        <div style="font-size:12px;color:#6b7280">Tests passés</div>
-      </div>
-      <div style="background:white;border:1px solid #e5e7eb;border-radius:8px;padding:12px 20px;text-align:center">
-        <div style="font-size:24px;font-weight:bold">${dureeMin} min</div>
-        <div style="font-size:12px;color:#6b7280">Durée</div>
-      </div>
-    </div>
-    <h3 style="margin-top:0;color:#1e40af">Résultats par module</h3>
+    ${kpis}
+    <h3 style="margin-top:0;color:#1e40af;margin-bottom:10px">Résultats par module</h3>
     <table style="border-collapse:collapse;width:100%;font-size:14px">
       <thead><tr style="background:#1e40af;color:white">
         <th style="padding:8px 12px;border:1px solid #e5e7eb;text-align:left">Module</th>
@@ -175,6 +235,7 @@ function genererHTML(results, { app, rapportUrl }) {
       </tr></thead>
       <tbody>${lignesModules}</tbody>
     </table>
+    ${blocProjets}
     ${blocEchecs}
     ${blocSkips}
     ${lienRapport}
@@ -195,7 +256,7 @@ async function main() {
   const rapportUrl = args.rapport || '';
   const runId      = args.run || null;
 
-  const runsDir = path.resolve(__dirname, '../../test-output/runs');
+  const runsDir     = path.resolve(__dirname, '../../test-output/runs');
   const resultsFile = trouverDernierRun(runsDir, runId);
 
   console.log(`[mailer] Lecture : ${resultsFile}`);
@@ -213,7 +274,7 @@ async function main() {
     ? `✅ TNR ${appConfig.label} — ${run.passes}/${run.total} OK`
     : `❌ TNR ${appConfig.label} — ${run.echecs} échec(s) sur ${run.total}`;
 
-  const html = genererHTML(results, { app, rapportUrl });
+  const html        = genererHTML(results, { app, rapportUrl });
   const transporter = nodemailer.createTransport(SMTP);
   await transporter.sendMail({ from: FROM, to: appConfig.destinataires.join(', '), subject: sujet, html });
 

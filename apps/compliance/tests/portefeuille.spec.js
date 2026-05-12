@@ -2,7 +2,7 @@
 
 // apps/compliance/tests/portefeuille.spec.js
 // TNR Portefeuille — Compliance for Business v2
-// Migré depuis script UFT PTF_01 à PTF_10
+// Migré depuis script UFT PTF_01 à PTF_10 + PTF_061/062 mode carte & liste
 
 const { test, expect } = require('@playwright/test');
 const { PortefeuillePage } = require('../pages/portefeuille.page');
@@ -11,12 +11,9 @@ const data = require('../../../test-data/compliance.json');
 
 // ---------------------------------------------------------------------------
 // Setup : session déjà chargée via storageState (auth.setup.js)
-// Le beforeEach navigue juste vers le dashboard
 // ---------------------------------------------------------------------------
 
 test.beforeEach(async ({ page, baseURL }) => {
-  // La session est déjà active via storageState
-  // On navigue vers le dashboard pour partir d'un état propre
   await page.goto(`${baseURL}/dashboard`, { waitUntil: 'domcontentloaded' });
   await closeAnnouncementPopup(page);
 });
@@ -52,7 +49,6 @@ test.describe('Portefeuille', () => {
   });
 
   test('[PTF_04] @tnr @portefeuille - accès /folders interdit sans authentification', async ({ browser, baseURL }) => {
-    // Ce test doit tourner sans session — on crée un contexte vierge
     const context = await browser.newContext();
     const page = await context.newPage();
     await page.goto(`${baseURL}${data.urls.portefeuille}`);
@@ -79,10 +75,9 @@ test.describe('Portefeuille', () => {
     await expect(ptf.btnStatutEval).toBeVisible();
   });
 
-  test('[PTF_06_2] @tnr @portefeuille - champ filtre équipe présent', async ({ page }) => {
+  test('[PTF_06_2] @tnr @portefeuille - champ filtre type relation présent', async ({ page }) => {
     const ptf = new PortefeuillePage(page);
     await ptf.allerAuPortefeuille();
-    // Le bouton équipe peut avoir un label variable selon provisioning
     await expect(ptf.btnTypeRelation).toBeVisible();
   });
 
@@ -106,31 +101,114 @@ test.describe('Portefeuille', () => {
     await expect(ptf.optTypePPClient).toBeVisible();
   });
 
-  test('[PTF_061_1] @tnr @portefeuille - card ARTHEMIS : id évaluation commence par "#"', async ({ page }) => {
+  // -------------------------------------------------------------------------
+  // PTF_061 — Card ARTHEMIS
+  //
+  // PTF_061_1  : id évaluation #xxxxx visible     → carte uniquement
+  //              (absent du DOM en mode liste)
+  // PTF_061_2  : CLIENT ou FOURNISSEUR présent    → carte
+  // PTF_061_2L : CLIENT ou FOURNISSEUR présent    → liste
+  // PTF_061_3  : pastille RED/GREEN/ORANGE         → carte
+  // PTF_061_3L : pastille RED/GREEN/ORANGE         → liste
+  // -------------------------------------------------------------------------
+
+  test('[PTF_061_1] @tnr @portefeuille - (carte) id évaluation #xxxxx affiché', async ({ page }) => {
     const ptf = new PortefeuillePage(page);
     await ptf.allerAuPortefeuille();
+    await ptf.forcerVueCarte();
 
-    const html = await ptf.getInnerHTMLCard(data.arthemis.denomination);
-    expect(html).toContain('#');
+    const idEval = ptf.getIdEvaluationCarte(data.arthemis.denomination);
+    await expect(idEval).toBeVisible();
+
+    const texte = await idEval.textContent();
+    expect(texte.trim()).toMatch(/^#\d+$/);
   });
 
-  test('[PTF_061_2] @tnr @portefeuille - card ARTHEMIS : libellé CLIENT ou FOURNISSEUR présent', async ({ page }) => {
+  test('[PTF_061_2] @tnr @portefeuille - (carte) libellé CLIENT ou FOURNISSEUR affiché', async ({ page }) => {
     const ptf = new PortefeuillePage(page);
     await ptf.allerAuPortefeuille();
+    await ptf.forcerVueCarte();
 
-    const html = await ptf.getInnerHTMLCard(data.arthemis.denomination);
-    const hasClient      = html.includes('CLIENT');
-    const hasFournisseur = html.includes('FOURNISSEUR');
-    expect(hasClient || hasFournisseur).toBeTruthy();
+    const relation = ptf.getRelationTypeCarte(data.arthemis.denomination);
+    await expect(relation).toBeVisible();
+
+    const texte = await relation.textContent();
+    expect(texte.trim()).toMatch(/^(CLIENT|FOURNISSEUR)$/);
   });
 
-  test('[PTF_061_3] @tnr @portefeuille - card ARTHEMIS : pastille de couleur présente', async ({ page }) => {
+  test('[PTF_061_2L] @tnr @portefeuille - (liste) libellé CLIENT ou FOURNISSEUR affiché', async ({ page }) => {
     const ptf = new PortefeuillePage(page);
     await ptf.allerAuPortefeuille();
+    await ptf.forcerVueListe();
 
-    const html = await ptf.getInnerHTMLCard(data.arthemis.denomination);
-    expect(html).toContain('svg');
+    const relation = ptf.getRelationTypeListe(data.arthemis.denomination);
+    await expect(relation).toBeVisible();
+
+    const texte = await relation.textContent();
+    expect(texte.trim()).toMatch(/^(CLIENT|FOURNISSEUR)$/);
   });
+
+  test('[PTF_061_3] @tnr @portefeuille - (carte) pastille risque RED/GREEN/ORANGE affichée', async ({ page }) => {
+    const ptf = new PortefeuillePage(page);
+    await ptf.allerAuPortefeuille();
+    await ptf.forcerVueCarte();
+
+    const pastille = ptf.getPastilleCarte(data.arthemis.denomination);
+    await expect(pastille).toBeVisible();
+
+    const classe = await pastille.getAttribute('class');
+    expect(classe).toMatch(/\b(RED|GREEN|ORANGE)\b/);
+  });
+
+  test('[PTF_061_3L] @tnr @portefeuille - (liste) pastille risque RED/GREEN/ORANGE affichée', async ({ page }) => {
+    const ptf = new PortefeuillePage(page);
+    await ptf.allerAuPortefeuille();
+    await ptf.forcerVueListe();
+
+    const pastille = ptf.getPastilleListe(data.arthemis.denomination);
+    await expect(pastille).toBeVisible();
+
+    const classe = await pastille.getAttribute('class');
+    expect(classe).toMatch(/\b(RED|GREEN|ORANGE)\b/);
+  });
+
+  // -------------------------------------------------------------------------
+  // PTF_062 — Colonnes spécifiques au mode liste
+  //
+  // PTF_062_1 : colonne Statut affiche "En cours"
+  // PTF_062_2 : colonne Date mise à jour affiche une date JJ/MM/AAAA
+  //
+  // Pas d'équivalent mode carte : ces colonnes n'existent qu'en vue liste.
+  // -------------------------------------------------------------------------
+
+  test('[PTF_062_1] @tnr @portefeuille - (liste) colonne statut affiche "En cours"', async ({ page }) => {
+    const ptf = new PortefeuillePage(page);
+    await ptf.allerAuPortefeuille();
+    await ptf.forcerVueListe();
+
+    const statut = ptf.getStatutListe(data.arthemis.denomination);
+    await expect(statut).toBeVisible();
+
+    const texte = await statut.textContent();
+    expect(texte.trim()).toBe('En cours');
+  });
+
+  test('[PTF_062_2] @tnr @portefeuille - (liste) colonne date mise à jour affiche une date valide', async ({ page }) => {
+    const ptf = new PortefeuillePage(page);
+    await ptf.allerAuPortefeuille();
+    await ptf.forcerVueListe();
+
+    const dateMaj = ptf.getDateMajListe(data.arthemis.denomination);
+    await expect(dateMaj).toBeVisible();
+
+    const texte = await dateMaj.textContent();
+    // Format attendu : JJ/MM/AAAA  ex: 03/03/2026
+    expect(texte.trim()).toMatch(/^\d{2}\/\d{2}\/\d{4}$/);
+  });
+
+  // -------------------------------------------------------------------------
+  // PTF_07 à PTF_10
+  // -------------------------------------------------------------------------
 
   test('[PTF_07] @tnr @portefeuille - recherche sans résultat : libellé "Aucun résultat"', async ({ page }) => {
     const ptf = new PortefeuillePage(page);
@@ -148,7 +226,6 @@ test.describe('Portefeuille', () => {
 
     await ptf.selectionnerStatutEnCours();
 
-    // Vérifie que le filtre "En cours" est bien actif via son indicateur
     const filtreActif = page.locator('[data-cy="filter.evaluationStatus.selected.inProgress"]');
     await expect(filtreActif).toBeVisible({ timeout: 5000 });
 
@@ -158,14 +235,13 @@ test.describe('Portefeuille', () => {
   test('[PTF_09] @tnr @portefeuille - recherche "ARTHEMIS" affiche la card ARTHEMIS', async ({ page }) => {
     const ptf = new PortefeuillePage(page);
     await ptf.allerAuPortefeuille();
+    await ptf.forcerVueCarte();
 
     await ptf.rechercher(data.arthemis.denomination);
 
-    // Vérifie que la card ARTHEMIS est visible
     const card = ptf.getCardEntreprise(data.arthemis.denomination);
     await expect(card).toBeVisible({ timeout: 15000 });
 
-    // Vérifie que le compteur a bien diminué (au moins 1 résultat visible)
     const nb = await ptf.getNbDossiers();
     expect(nb).toBeGreaterThanOrEqual(1);
   });
@@ -173,6 +249,7 @@ test.describe('Portefeuille', () => {
   test('[PTF_10] @tnr @portefeuille - clic sur ARTHEMIS redirige vers page évaluations', async ({ page }) => {
     const ptf = new PortefeuillePage(page);
     await ptf.allerAuPortefeuille();
+    await ptf.forcerVueCarte();
 
     await ptf.rechercher(data.arthemis.denomination);
 
