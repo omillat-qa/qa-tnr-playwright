@@ -252,7 +252,7 @@ const matrix = [
   {
     name: 'tnr-chromium-ua-noparam-compliance-v2',
     testDir: path.join(ROOT, 'apps/compliance/tests'),
-    testMatch: '**/dashboard.spec.js',
+    testMatch: '**/dashboard-noparam.spec.js',
     use: {
       ...COMMON_USE,
       browserName: 'chromium',
