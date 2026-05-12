@@ -4,11 +4,25 @@
 // Envoi email HTML récap TNR après un run Playwright
 // Usage : node shared/mailer/send-report.js --projet=tnr-chromium-ua-compliance-v2 --rapport=\\nas\...
 //      ou node shared/mailer/send-report.js --app=compliance-v2 --env=ua (rétrocompat)
-// Lit test-output/results-[projet].json généré par le TNR reporter
 
 const nodemailer = require('nodemailer');
 const fs         = require('fs');
 const path       = require('path');
+
+// Chargement .env.local en priorité — DOIT être fait avant tout accès à process.env
+(function chargerEnv() {
+  const dotenv = require('dotenv');
+  const envFiles = [
+    path.resolve(__dirname, '../../.env.local'),
+    path.resolve(__dirname, '../../.env'),
+  ];
+  for (const f of envFiles) {
+    if (fs.existsSync(f)) {
+      dotenv.config({ path: f });
+      break;
+    }
+  }
+})();
 
 // ---------------------------------------------------------------------------
 // Config SMTP (sans auth — relay interne Ellisphere)
@@ -175,18 +189,6 @@ function genererHTML(results, { app, env, rapportUrl }) {
 // Main
 // ---------------------------------------------------------------------------
 async function main() {
-  const dotenv = require('dotenv');
-  const envFiles = [
-    path.resolve(__dirname, '../../.env.local'),
-    path.resolve(__dirname, '../../.env'),
-  ];
-  for (const f of envFiles) {
-    if (fs.existsSync(f)) {
-      dotenv.config({ path: f, override: false });
-      break;
-    }
-  }
-
   const args       = parseArgs();
   const rapportUrl = args.rapport || '';
 
