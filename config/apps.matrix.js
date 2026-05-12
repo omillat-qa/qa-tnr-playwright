@@ -1,8 +1,8 @@
+'use strict';
+
 // config/apps.matrix.js
 // Matrice : quels browsers sur quels envs pour chaque app
 // C'est ici qu'on décide la couverture — pas dans playwright.config.js
-
-'use strict';
 
 const path   = require('path');
 const ROOT   = path.resolve(__dirname, '..');
@@ -21,7 +21,7 @@ const BROWSERS = {
   chromium: { browserName: 'chromium' },
   firefox:  { browserName: 'firefox' },
   edge:     { channel: 'msedge' },
-  webkit:   { browserName: 'webkit' },   // WebKit Playwright (émulé sur Windows)
+  webkit:   { browserName: 'webkit' },
 };
 
 // Options communes à tous les projets
@@ -38,9 +38,6 @@ const COMMON_USE = {
 
 /**
  * Génère les projets Playwright pour une app donnée
- * @param {string} app        - clé app (ex: 'ellipro-risk')
- * @param {string} testDir    - chemin vers les tests de l'app
- * @param {Object} matrix     - { ua: [...browsers], prod: [...browsers], ia: [...browsers], dev: [...browsers] }
  */
 function makeProjects(app, testDir, matrix) {
   const projects = [];
@@ -61,15 +58,10 @@ function makeProjects(app, testDir, matrix) {
   return projects;
 }
 
-// ============================================================
-// MATRICE PAR APP
-// Ajouter une app = ajouter un bloc makeProjects() ici
-// ============================================================
-
 const matrix = [
 
   // ----------------------------------------------------------
-  // SETUP — login unique avant les tests (storageState)
+  // SETUP COMPLIANCE v2
   // ----------------------------------------------------------
 
   {
@@ -97,7 +89,7 @@ const matrix = [
   },
 
   // ----------------------------------------------------------
-  // ELLIPRO RISK — SETUP
+  // SETUP ELLIPRO RISK
   // ----------------------------------------------------------
 
   {
@@ -135,6 +127,17 @@ const matrix = [
     dev:  ['chromium'],
   }),
 
+  ...makeProjects('ellipro-mod-dec', './apps/ellipro-mod-dec/tests', {
+    ua:   ['chromium', 'firefox', 'edge', 'webkit'],
+    prod: ['chromium', 'edge'],
+    ia:   ['chromium'],
+  }),
+
+  ...makeProjects('ellipro-saml', './apps/ellipro-risk/tests/auth', {
+    ua:   ['chromium'],
+    prod: ['chromium'],
+  }),
+
   // ----------------------------------------------------------
   // ELLIPRO RISK — PERF RECHERCHE SOLR
   // ----------------------------------------------------------
@@ -142,6 +145,7 @@ const matrix = [
   {
     name: 'perf-recherche-ellipro-risk-ua',
     testDir: path.join(ROOT, 'apps/ellipro-risk/tests/recherche'),
+    testMatch: '**/perf-recherche.spec.js',
     use: {
       ...COMMON_USE,
       browserName: 'chromium',
@@ -155,6 +159,7 @@ const matrix = [
   {
     name: 'perf-recherche-ellipro-risk-prod',
     testDir: path.join(ROOT, 'apps/ellipro-risk/tests/recherche'),
+    testMatch: '**/perf-recherche.spec.js',
     use: {
       ...COMMON_USE,
       browserName: 'chromium',
@@ -164,17 +169,6 @@ const matrix = [
     dependencies: ['setup-ellipro-risk-prod'],
     metadata: { app: 'ellipro-risk', env: 'prod', browser: 'chromium' },
   },
-
-  ...makeProjects('ellipro-mod-dec', './apps/ellipro-mod-dec/tests', {
-    ua:   ['chromium', 'firefox', 'edge', 'webkit'],
-    prod: ['chromium', 'edge'],
-    ia:   ['chromium'],
-  }),
-
-  ...makeProjects('ellipro-saml', './apps/ellipro-risk/tests/auth', {
-    ua:   ['chromium'],
-    prod: ['chromium'],
-  }),
 
   // ----------------------------------------------------------
   // COMPLIANCE v1
@@ -188,12 +182,13 @@ const matrix = [
   }),
 
   // ----------------------------------------------------------
-  // COMPLIANCE v2 UA — dépend du setup-cfb-v2-ua
+  // COMPLIANCE v2 UA — TNR
   // ----------------------------------------------------------
 
   {
     name: 'chromium-ua-compliance-v2',
     testDir: path.join(ROOT, 'apps/compliance/tests'),
+    testMatch: '**/portefeuille.spec.js',
     use: {
       ...COMMON_USE,
       browserName: 'chromium',
@@ -206,6 +201,7 @@ const matrix = [
   {
     name: 'firefox-ua-compliance-v2',
     testDir: path.join(ROOT, 'apps/compliance/tests'),
+    testMatch: '**/portefeuille.spec.js',
     use: {
       ...COMMON_USE,
       browserName: 'firefox',
@@ -218,6 +214,7 @@ const matrix = [
   {
     name: 'edge-ua-compliance-v2',
     testDir: path.join(ROOT, 'apps/compliance/tests'),
+    testMatch: '**/portefeuille.spec.js',
     use: {
       ...COMMON_USE,
       channel: 'msedge',
@@ -230,6 +227,7 @@ const matrix = [
   {
     name: 'webkit-ua-compliance-v2',
     testDir: path.join(ROOT, 'apps/compliance/tests'),
+    testMatch: '**/portefeuille.spec.js',
     use: {
       ...COMMON_USE,
       browserName: 'webkit',
@@ -241,12 +239,13 @@ const matrix = [
   },
 
   // ----------------------------------------------------------
-  // COMPLIANCE v2 PROD — dépend du setup-cfb-v2-prod
+  // COMPLIANCE v2 PROD — TNR
   // ----------------------------------------------------------
 
   {
     name: 'chromium-prod-compliance-v2',
     testDir: path.join(ROOT, 'apps/compliance/tests'),
+    testMatch: '**/portefeuille.spec.js',
     use: {
       ...COMMON_USE,
       browserName: 'chromium',
@@ -259,6 +258,7 @@ const matrix = [
   {
     name: 'firefox-prod-compliance-v2',
     testDir: path.join(ROOT, 'apps/compliance/tests'),
+    testMatch: '**/portefeuille.spec.js',
     use: {
       ...COMMON_USE,
       browserName: 'firefox',
@@ -271,6 +271,7 @@ const matrix = [
   {
     name: 'edge-prod-compliance-v2',
     testDir: path.join(ROOT, 'apps/compliance/tests'),
+    testMatch: '**/portefeuille.spec.js',
     use: {
       ...COMMON_USE,
       channel: 'msedge',
@@ -279,6 +280,38 @@ const matrix = [
     },
     dependencies: ['setup-cfb-v2-prod'],
     metadata: { app: 'compliance-v2', env: 'prod', browser: 'edge' },
+  },
+
+  // ----------------------------------------------------------
+  // COMPLIANCE v2 — PERF RECHERCHE SOLR
+  // ----------------------------------------------------------
+
+  {
+    name: 'perf-recherche-compliance-v2-ua',
+    testDir: path.join(ROOT, 'apps/compliance/tests'),
+    testMatch: '**/perf-recherche.spec.js',
+    use: {
+      ...COMMON_USE,
+      browserName: 'chromium',
+      baseURL: getUrl('compliance-v2', 'ua'),
+      storageState: AUTH['cfb-ua'],
+    },
+    dependencies: ['setup-cfb-v2-ua'],
+    metadata: { app: 'compliance-v2', env: 'ua', browser: 'chromium' },
+  },
+
+  {
+    name: 'perf-recherche-compliance-v2-prod',
+    testDir: path.join(ROOT, 'apps/compliance/tests'),
+    testMatch: '**/perf-recherche.spec.js',
+    use: {
+      ...COMMON_USE,
+      browserName: 'chromium',
+      baseURL: getUrl('compliance-v2', 'prod'),
+      storageState: AUTH['cfb-prod'],
+    },
+    dependencies: ['setup-cfb-v2-prod'],
+    metadata: { app: 'compliance-v2', env: 'prod', browser: 'chromium' },
   },
 
   // ----------------------------------------------------------
