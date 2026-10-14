@@ -51,6 +51,14 @@ class TnrReporter {
   }
 
   onTestEnd(test, result) {
+    // Retry : une tentative en échec qui sera rejouée n'est pas le résultat final
+    // → on l'ignore pour ne pas compter le test deux fois (échec + succès)
+    const estDerniereTentative =
+      result.status === 'passed' ||
+      result.status === 'skipped' ||
+      result.retry >= test.retries;
+    if (!estDerniereTentative) return;
+
     const project   = test.parent?.project?.() || {};
     const metadata  = project.metadata || {};
     const nomProjet = project.name || 'inconnu';
@@ -73,7 +81,8 @@ class TnrReporter {
       browser:   metadata.browser || 'inconnu',
       statut:    result.status,
       duree_ms:  result.duration,
-      erreur:    result.status === 'failed' ? (result.error?.message?.split('\n')[0] || null) : null,
+      tentative: result.retry,   // > 0 = passé après retry (flaky)
+      erreur:    ['failed', 'timedOut'].includes(result.status) ? (result.error?.message?.split('\n')[0] || null) : null,
       timestamp: new Date().toISOString(),
     };
 

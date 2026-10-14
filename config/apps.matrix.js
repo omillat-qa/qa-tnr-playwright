@@ -59,6 +59,8 @@ function makeProjects(app, testDir, matrix, testMatch) {
       const project = {
         name: `tnr-${browser}-${env}-${app}`,
         testDir: path.join(ROOT, testDir),
+        // Les specs perf ont leurs propres projets perf-recherche-* (jamais parallélisés)
+        testIgnore: '**/perf-*.spec.js',
         use: {
           ...COMMON_USE,
           ...BROWSERS[browser],
