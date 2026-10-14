@@ -177,6 +177,7 @@ const matrix = [
     name: 'perf-recherche-ua-ellipro-risk',
     testDir: path.join(ROOT, 'apps/ellipro-risk/tests/recherche'),
     testMatch: '**/perf-recherche.spec.js',
+    workers: 1,   // perf : jamais parallélisé, même en CI
     use: {
       ...COMMON_USE,
       browserName: 'chromium',
@@ -191,6 +192,7 @@ const matrix = [
     name: 'perf-recherche-prod-ellipro-risk',
     testDir: path.join(ROOT, 'apps/ellipro-risk/tests/recherche'),
     testMatch: '**/perf-recherche.spec.js',
+    workers: 1,   // perf : jamais parallélisé, même en CI
     use: {
       ...COMMON_USE,
       browserName: 'chromium',
@@ -371,6 +373,7 @@ const matrix = [
     name: 'perf-recherche-ua-compliance-v2',
     testDir: path.join(ROOT, 'apps/compliance/tests'),
     testMatch: '**/perf-recherche.spec.js',
+    workers: 1,   // perf : jamais parallélisé, même en CI
     use: {
       ...COMMON_USE,
       browserName: 'chromium',
@@ -385,6 +388,7 @@ const matrix = [
     name: 'perf-recherche-prod-compliance-v2',
     testDir: path.join(ROOT, 'apps/compliance/tests'),
     testMatch: '**/perf-recherche.spec.js',
+    workers: 1,   // perf : jamais parallélisé, même en CI
     use: {
       ...COMMON_USE,
       browserName: 'chromium',

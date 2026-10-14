@@ -42,12 +42,16 @@ class TnrReporter {
     this.runDir = path.join(RUNS_DIR, `run-${ts}`);
     fs.mkdirSync(this.runDir, { recursive: true });
 
-    fs.writeFileSync(path.join(this.runDir, 'metrics.json'), JSON.stringify([], null, 2));
-
     process.env.TNR_RUN_DIR = this.runDir;
 
     console.log(`\n[TNR Reporter] Début du run — ${suite.allTests().length} tests`);
     console.log(`[TNR Reporter] Dossier : ${this.runDir}`);
+
+    // Perf + TNR dans le même run → mesures perf faussées par la charge parallèle
+    const projetsLances = suite.suites.filter(s => s.allTests().length).map(s => s.title);
+    if (projetsLances.some(p => p.startsWith('perf-')) && projetsLances.some(p => p.startsWith('tnr-'))) {
+      console.warn('[TNR Reporter] ⚠ Projets perf et tnr dans le même run — lancer la perf seule pour des mesures fiables');
+    }
   }
 
   onTestEnd(test, result) {
@@ -170,7 +174,7 @@ class TnrReporter {
       output.recap_modules.forEach(m => console.log(m.libelle));
       console.log('-------------------\n');
 
-      this._archiverMetrics(output);
+      this._archiverMetrics();
 
     } catch (e) {
       console.error('[TNR Reporter] Erreur écriture résultats:', e.message);
@@ -181,19 +185,33 @@ class TnrReporter {
   // Archivage historique perf — history-[projet].json + .csv
   // ---------------------------------------------------------------------------
 
-  _archiverMetrics(output) {
+  _archiverMetrics() {
     try {
-      const metricsFile = path.join(this.runDir, 'metrics.json');
-      if (!fs.existsSync(metricsFile)) return;
+      // Fusion des fichiers par worker → metrics.json consolidé du run
+      const metricsRun = fs.readdirSync(this.runDir)
+        .filter(f => /^metrics-w\d+\.jsonl$/.test(f))
+        .flatMap(f => fs.readFileSync(path.join(this.runDir, f), 'utf8').split('\n').filter(Boolean))
+        .map(l => { try { return JSON.parse(l); } catch { return null; } })
+        .filter(Boolean)
+        .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+      fs.writeFileSync(path.join(this.runDir, 'metrics.json'), JSON.stringify(metricsRun, null, 2));
 
-      const metricsRun = JSON.parse(fs.readFileSync(metricsFile, 'utf8'));
-      if (!metricsRun.length) return;
+      // Historique : uniquement les projets perf-*, un fichier par projet
+      const parProjet = {};
+      for (const m of metricsRun) {
+        if (!m.projet || !m.projet.startsWith('perf-')) continue;
+        (parProjet[m.projet] ||= []).push(m);
+      }
+      for (const [projet, mesures] of Object.entries(parProjet)) {
+        this._ecrireHistorique(projet, mesures);
+      }
+    } catch (e) {
+      console.warn('[TNR Reporter] Archivage métriques :', e.message);
+    }
+  }
 
-      const firstMetric   = metricsRun[0];
-      const app           = firstMetric.app || 'unknown';
-      const env           = firstMetric.env || 'unknown';
-      const nomProjetPerf = output.run.projets.find(p => p.startsWith('perf-')) || `${app}-${env}`;
-
+  _ecrireHistorique(nomProjetPerf, metricsRun) {
+    try {
       const runDate  = new Date(this.runDebut).toISOString().slice(0, 10);
       const histFile = path.join(OUTPUT_DIR, `history-${nomProjetPerf}.json`);
       const csvFile  = path.join(OUTPUT_DIR, `history-${nomProjetPerf}.csv`);
