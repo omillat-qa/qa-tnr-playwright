@@ -12,9 +12,9 @@ qa-tnr-playwright/
 ├── .auth/               # storageState sessions (gitignore — ne jamais commiter)
 ├── apps/                # Un dossier par app
 │   ├── compliance/
-│   │   ├── pages/       # POM : portefeuille.page.js, recherche.page.js
+│   │   ├── pages/       # POM : portefeuille.page.js, recherche.page.js, taches.page.js
 │   │   ├── setup/       # auth.setup.js (login unique storageState)
-│   │   └── tests/       # portefeuille.spec.js, perf-recherche.spec.js
+│   │   └── tests/       # portefeuille.spec.js, perf-recherche.spec.js, taches.spec.js
 │   └── ellipro-risk/
 │       ├── pages/
 │       ├── setup/
@@ -35,7 +35,8 @@ qa-tnr-playwright/
 └── test-data/
     ├── motscles-recherche.json   # 80 mots-clés Solr — NE PAS MODIFIER
     ├── compliance.json
-    └── ellipro.json
+    ├── ellipro.json
+    └── taches.json
 ```
 
 ---
@@ -79,6 +80,7 @@ Chaque test porte un ID fonctionnel issu du référentiel métier.
 | Préfixe | App / Module | Exemple |
 |---------|-------------|---------|
 | `PTF_` | Portefeuille Compliance | `[PTF_01]` |
+| `TCH_` | Tâches Compliance | `[TCH_01]` |
 | `R_` | Auth / réseau Ellipro Risk | `[R_001]` |
 | `PERF` | Tests performance Solr | `[PERF]` |
 
@@ -110,9 +112,9 @@ Chaque test doit avoir au moins un tag de type et un tag de module :
 
 // Module métier (utilisé pour le récap email)
 @portefeuille
+@taches
 @recherche
 @evaluation
-@taches
 // etc.
 ```
 
@@ -202,6 +204,34 @@ async forcerVueCarte() {
 > ⚠️ Ne pas détecter la vue via `component.count()` — Angular peut garder
 > les composants dans le DOM sans les afficher.
 
+### Dropdowns Angular CDK multi-select
+
+Les dropdowns de filtres Angular CDK (Compliance) ne se ferment **pas** automatiquement
+après un clic d'option (multi-select). Le `cdk-overlay-backdrop` reste actif et bloque
+les clics suivants si on ne ferme pas le dropdown explicitement.
+
+Pattern obligatoire après chaque interaction avec un dropdown CDK :
+1. Cliquer l'option
+2. Appuyer `Escape`
+3. Attendre `aria-expanded="false"` sur le bouton trigger
+
+```javascript
+async fermerDropdownEquipes() {
+  await this.page.keyboard.press('Escape');
+  await this.page.waitForFunction(
+    sel => {
+      const el = document.querySelector(sel);
+      return el && el.getAttribute('aria-expanded') === 'false';
+    },
+    '[data-cy="select.team.selectBtn"]',
+    { timeout: 5000 }
+  );
+  await this.page.waitForTimeout(300);
+}
+```
+
+> Voir `taches.page.js` → `fermerDropdownEquipes()` / `fermerDropdownUser()` pour le pattern de référence.
+
 ---
 
 ## Matrice browsers par environnement
@@ -251,7 +281,9 @@ Format : `type(app): description courte`
 Exemples :
 ```
 feat(compliance): ajout PTF_061_2L et PTF_062 mode liste
+feat(compliance): ajout TCH_07 à TCH_20 module tâches
 fix(compliance): correction getVueActive() détection via disabled
+fix(compliance): correction selector task.checkUser.option.all (casse)
 refactor(shared): extraction keycloak.page.js depuis ellipro
 chore(config): mise à jour matrice browsers UA
 docs: mise à jour CONVENTIONS suffixe vue L

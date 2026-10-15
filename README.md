@@ -122,6 +122,9 @@ npx playwright test --config=config/playwright.config.js --project=tnr-chromium-
 
 # Ellipro Risk UA
 npx playwright test --config=config/playwright.config.js --project=tnr-chromium-ua-ellipro-risk
+
+# Tâches Compliance v2 UA (profil admin)
+npx playwright test --config=config/playwright.config.js --project=tnr-chromium-ua-admin-taches-compliance-v2
 ```
 
 ### Perf recherche Solr
@@ -169,7 +172,7 @@ npx playwright test --config=config/playwright.config.js --ui
 
 | App | Type | Auth | TNR | Perf Solr | Envs |
 |-----|------|------|-----|-----------|------|
-| Compliance for Business v2 | Angular | Keycloak | ✅ 17 tests | ✅ 80 mots-clés | UA, PROD |
+| Compliance for Business v2 | Angular | Keycloak | ✅ 17 tests PTF + 20 tests TCH | ✅ 80 mots-clés | UA, PROD |
 | Ellipro Risk | Angular | Keycloak | ✅ 13 tests | ✅ 80 mots-clés | UA, PROD, IA, DEV |
 | Ellipro Mod/Déc | JSF | Keycloak + MD5 | 🔜 à migrer | 🔜 à migrer | UA, PROD |
 | Iris | JSF interne | SSO interne | 🔜 à migrer | 🔜 à migrer | UA, PROD |
@@ -224,6 +227,7 @@ Pipeline nocturne (cron 02:00)
 | Préfixe | App | Exemple |
 |---------|-----|---------|
 | `PTF_` | Portefeuille Compliance | `[PTF_01]` |
+| `TCH_` | Tâches Compliance | `[TCH_01]` |
 | `R_` | Auth / réseau Ellipro Risk | `[R_001]` |
 | `PERF` | Tests performance | `[PERF]` |
 
@@ -235,6 +239,7 @@ Pipeline nocturne (cron 02:00)
 | `@smoke` | Tests critiques post-déploiement |
 | `@auth` | Tests d'authentification |
 | `@portefeuille` | Module portefeuille Compliance |
+| `@taches` | Module tâches Compliance |
 
 ### Sélecteurs (ordre de priorité)
 
