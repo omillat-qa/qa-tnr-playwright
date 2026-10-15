@@ -365,6 +365,38 @@ const matrix = [
   },
 
   // ----------------------------------------------------------
+  // COMPLIANCE v2 — TNR TÂCHES (profil Admin)
+  // tnr-chromium-[env]-admin-taches-compliance-v2
+  // ----------------------------------------------------------
+
+  {
+    name: 'tnr-chromium-ua-admin-taches-compliance-v2',
+    testDir: path.join(ROOT, 'apps/compliance/tests'),
+    testMatch: '**/taches.spec.js',
+    use: {
+      ...COMMON_USE,
+      browserName: 'chromium',
+      baseURL: getUrl('compliance-v2', 'ua'),
+      storageState: AUTH['cfb-ua-admin'],
+    },
+    dependencies: ['setup-compliance-v2-ua'],
+    metadata: { app: 'compliance-v2', env: 'ua', browser: 'chromium', profil: 'admin', feature: 'taches' },
+  },
+  {
+    name: 'tnr-chromium-prod-admin-taches-compliance-v2',
+    testDir: path.join(ROOT, 'apps/compliance/tests'),
+    testMatch: '**/taches.spec.js',
+    use: {
+      ...COMMON_USE,
+      browserName: 'chromium',
+      baseURL: getUrl('compliance-v2', 'prod'),
+      storageState: AUTH['cfb-prod-admin'],
+    },
+    dependencies: ['setup-compliance-v2-prod'],
+    metadata: { app: 'compliance-v2', env: 'prod', browser: 'chromium', profil: 'admin', feature: 'taches' },
+  },
+
+  // ----------------------------------------------------------
   // COMPLIANCE v2 — PERF RECHERCHE SOLR
   // perf-recherche-[env]-compliance-v2
   // ----------------------------------------------------------

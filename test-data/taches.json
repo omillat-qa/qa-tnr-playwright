@@ -1,0 +1,25 @@
+{
+  "equipes": {
+    "favorites": ["Equipe BS TPME Est", "Equipe BS TPME Gd Sud Est", "Equipe BS TPME NNOM", "Equipe BS TPME Ouest", "Equipe BSC AAT"],
+    "affectation": "Equipe BS TPME Ouest",
+    "filtre": "EquipeBSTPMEOuest"
+  },
+  "utilisateurs": {
+    "admin": "CFBv2_TNR",
+    "collab": "cfbv2_collab_tnr",
+    "filtreCollab": "cfbv2_collab_tnr"
+  },
+  "typesTache": ["Remédiation", "Prise de décision"],
+  "colonnes": {
+    "evaluation": "Evaluation",
+    "dossier": "Dossier",
+    "taskType": "Type de tâche",
+    "description": "Description",
+    "dateEcheance": "Date d'échéance",
+    "equipe": "Équipe affectée",
+    "affectation": "Utilisateur affecté"
+  },
+  "pagination": {
+    "taillePageMinimale": 10
+  }
+}
