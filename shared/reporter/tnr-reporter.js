@@ -94,9 +94,13 @@ class TnrReporter {
 
     const idMatch = test.title.match(/\[([^\]]+)\]/);
     const idFonctionnel = idMatch ? idMatch[1] : null;
+    // Tests perf : un test par mot-clé, tous d'id "PERF" → le mot-clé sert de clé unique
+    // (même champ que dans les mesures : jointure tests ↔ mesures sur run_id + projet + motcle)
+    const motcleMatch = idFonctionnel === 'PERF' ? test.title.match(/"([^"]+)"/) : null;
 
     const entree = {
       id:        idFonctionnel,
+      motcle:    motcleMatch ? motcleMatch[1] : null,
       titre:     test.title,
       module,
       projet:    nomProjet,
