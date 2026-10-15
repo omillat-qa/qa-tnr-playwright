@@ -246,17 +246,28 @@ test.describe('Portefeuille', () => {
     expect(nb).toBeGreaterThanOrEqual(1);
   });
 
+  //test('[PTF_10] @tnr @portefeuille - clic sur ARTHEMIS redirige vers page évaluations', async ({ page }) => {
+    //const ptf = new PortefeuillePage(page);
+    //await ptf.allerAuPortefeuille();
+    //await ptf.forcerVueCarte();
+	//
+    //await ptf.rechercher(data.arthemis.denomination);
+	//
+    //const card = ptf.getCardEntreprise(data.arthemis.denomination);
+    //await card.click();
+	//
+    //await expect(page).toHaveURL(/relations|evaluations|folders/, { timeout: 10000 });
+  //});
+
   test('[PTF_10] @tnr @portefeuille - clic sur ARTHEMIS redirige vers page évaluations', async ({ page }) => {
     const ptf = new PortefeuillePage(page);
     await ptf.allerAuPortefeuille();
-    await ptf.forcerVueCarte();
 
     await ptf.rechercher(data.arthemis.denomination);
 
-    const card = ptf.getCardEntreprise(data.arthemis.denomination);
-    await card.click();
+    // Clic sur le lien titre (a.title) — pas sur le container div
+    await ptf.cliqueSurCarte(data.arthemis.denomination);
 
-    await expect(page).toHaveURL(/relations|evaluations|folders/, { timeout: 10000 });
+    await expect(page).toHaveURL(/relations|evaluations|folders\/\d+/, { timeout: 10000 });
   });
-
 });

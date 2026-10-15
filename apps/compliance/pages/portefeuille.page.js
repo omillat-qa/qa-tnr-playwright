@@ -2,6 +2,9 @@
 
 // apps/compliance/pages/portefeuille.page.js
 // Page Object — Portefeuille (page /folders) Compliance for Business v2
+// Sélecteurs mis à jour après refactoring Angular (octobre 2026)
+// Nouveau DOM card : .list > .folder-card avec data-cy="card.{id}.name"
+// Nouveau DOM liste : app-data-table > table.wallet-list > tr.hoverable avec .column-*
 
 const { ajouterLog } = require('../../../shared/utils/logger');
 const { mesurer }    = require('../../../shared/utils/metrics');
@@ -18,9 +21,9 @@ class PortefeuillePage {
     // Compliance for Business utilise data-cy (pas data-testid)
     this.lienMenuPortefeuille = page.locator('[data-cy="sidebarMenu.wallet"]');
 
-    // --- Bascule vue ---
-    this.btnVueCarte = page.locator('[data-cy="wallet.cardView"]');
-    this.btnVueListe = page.locator('[data-cy="wallet.listView"]');
+						  
+																   
+																   
 
     // --- Filtres ---
     this.btnStatutEval        = page.locator('[data-cy="select.evaluationStatus.selectBtn"]');
@@ -40,17 +43,21 @@ class PortefeuillePage {
     this.optRisqueFaible      = page.locator('[data-cy="filter.risk.option.low"]');
 
     this.btnEffacerFiltres    = page.getByRole('button', { name: 'Effacer les filtres' });
+    this.btnVueCarte          = page.locator('[data-cy="wallet.cardView"]');
+    this.btnVueListe          = page.locator('[data-cy="wallet.listView"]');
 
     // --- Recherche ---
     this.champRecherche       = page.locator('[data-cy="wallet.search"]');
 
     // --- Contenu ---
     this.titrePortefeuille    = page.getByRole('heading', { name: 'Portefeuille' });
-    // Vue carte : dd[data-cy="wallet.cardView.folders.total"]
     // Vue liste : dd[data-cy="wallet.listView.evals.total"]
-    this.labelNbDossiersCarte = page.locator('dd[data-cy="wallet.cardView.folders.total"]');
+    // Vue carte : dd[data-cy="wallet.cardView.folders.total"]
     this.labelNbDossiersListe = page.locator('dd[data-cy="wallet.listView.evals.total"]');
-    this.messageAucunResultat = page.getByRole('heading', { name: 'Aucun résultat' });
+    this.labelNbDossiersCarte = page.locator('dd[data-cy="wallet.cardView.folders.total"]');
+    this.messageAucunResultat = page.locator('[data-cy="wallet.noResult"]');
+    
+																			
   }
 
   // ---------------------------------------------------------------------------
@@ -66,48 +73,48 @@ class PortefeuillePage {
   }
 
   // ---------------------------------------------------------------------------
-  // Gestion de la vue (carte / liste)
-  // Equivalent de GetEtatpftListeOUCard() en UFT
+  // Nombre de dossiers — fonctionne en vue liste ET vue carte
+												 
+																				
+
+	 
+												
+																						  
+	 
+						
+																	  
+																
+													
+   
+
+	 
+														  
+	 
+						  
+										  
+						  
+									 
+														  
+																					
+																   
+	 
+   
+
+	 
+														  
+	 
+						  
+										  
+						  
+									 
+																			 
+																   
+	 
+   
+
   // ---------------------------------------------------------------------------
-
-  /**
-   * Retourne la vue active : 'carte' ou 'liste'
-   * Détection via le bouton disabled : le bouton de la vue active est toujours disabled.
-   * ex: si wallet.cardView est disabled → on est en vue carte.
-   */
-  async getVueActive() {
-    const btnCarte = this.page.locator('[data-cy="wallet.cardView"]');
-    const estDisabled = await btnCarte.getAttribute('disabled');
-    return estDisabled !== null ? 'carte' : 'liste';
-  }
-
-  /**
-   * Force le passage en vue carte si on est en vue liste.
-   */
-  async forcerVueCarte() {
-    const vue = await this.getVueActive();
-    if (vue === 'liste') {
-      await this.btnVueCarte.click();
-      await this.page.locator('app-card-view').waitFor({ state: 'visible' });
-      ajouterLog('Bascule vers vue carte', 'Portefeuille', 'info');
-    }
-  }
-
-  /**
-   * Force le passage en vue liste si on est en vue carte.
-   */
-  async forcerVueListe() {
-    const vue = await this.getVueActive();
-    if (vue === 'carte') {
-      await this.btnVueListe.click();
-      await this.page.locator('app-list-view').waitFor({ state: 'visible' });
-      ajouterLog('Bascule vers vue liste', 'Portefeuille', 'info');
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // Compteur dossiers — fonctionne en vue liste ET vue carte
-  // ---------------------------------------------------------------------------
+															   
+																				
 
   async getNbDossiers() {
     const locator = this.page.locator(
@@ -174,55 +181,66 @@ class PortefeuillePage {
   }
 
   // ---------------------------------------------------------------------------
-  // Sélecteurs MODE CARTE
-  // Structure DOM :
-  //   app-card-view > .card > .title > h2 (nom entreprise)
-  //   app-card-view > .card > .evaluations > a[href*="/relations/"]
-  //     > .eval-id        (#73949)
-  //     > .relation-type  (CLIENT / FOURNISSEUR)
-  //     > app-font-icon.RED|GREEN|ORANGE (pastille)
+  // Vue carte — nouveau DOM : .folder-card
+  // data-cy="card.{folderId}.name" sur le span du nom
+															   
+																						 
+								   
+												 
+													
+																
   // ---------------------------------------------------------------------------
 
   /**
-   * Retourne le conteneur .card d'une entreprise (mode carte).
-   * @param {string} denomination  ex: 'ARTHEMIS'
+   * Retourne le locator du folder-card d'une entreprise par dénomination.
+   * Utilise data-cy$=".name" pour matcher sans connaître le folderId.
+   * @param {string} denomination
    */
   getCardEntreprise(denomination) {
     return this.page
-      .locator('app-card-view .card')
-      .filter({ has: this.page.locator('h2', { hasText: denomination }) });
+      .locator('.folder-card')
+      .filter({ has: this.page.locator('[data-cy$=".name"]').filter({ hasText: denomination }) });
   }
 
   /**
-   * Retourne le lien de l'évaluation dans une card (mode carte).
-   * @param {string} denomination  ex: 'ARTHEMIS'
+   * Retourne le lien titre de la card (a.title → /folders/{id})
+   * C'est ce lien qu'on clique pour aller sur la page dossier.
+   * @param {string} denomination
+   */
+  getLienTitreCarte(denomination) {
+    return this.getCardEntreprise(denomination).locator('a.title');
+  }
+
+  /**
+   * Retourne le premier lien évaluation de la card.
+   * Sélecteur : a[data-cy*=".evaluation."][data-cy$=".link"]
+   * @param {string} denomination
    */
   getLienEvaluationCarte(denomination) {
     return this.getCardEntreprise(denomination)
-      .locator('a[href*="/relations/"]')
+      .locator('a[data-cy*=".evaluation."][data-cy$=".link"]')
       .first();
   }
 
   /**
-   * Retourne le span contenant l'id d'évaluation (#73949) — mode carte uniquement.
-   * Cet élément est ABSENT en mode liste.
-   * @param {string} denomination  ex: 'ARTHEMIS'
+   * Retourne l'ID évaluation (#xxxxx) dans la card.
+   * @param {string} denomination
    */
   getIdEvaluationCarte(denomination) {
     return this.getLienEvaluationCarte(denomination).locator('.eval-id');
   }
 
   /**
-   * Retourne le span relation-type (CLIENT/FOURNISSEUR) — mode carte.
-   * @param {string} denomination  ex: 'ARTHEMIS'
+   * Retourne le libellé du type de relation (CLIENT, FOURNISSEUR, …) — vue carte.
+   * @param {string} denomination
    */
   getRelationTypeCarte(denomination) {
     return this.getLienEvaluationCarte(denomination).locator('.relation-type');
   }
 
   /**
-   * Retourne la pastille de risque (RED/GREEN/ORANGE) — mode carte.
-   * @param {string} denomination  ex: 'ARTHEMIS'
+   * Retourne la pastille de risque (app-font-icon.RED|GREEN|ORANGE) — vue carte.
+   * @param {string} denomination
    */
   getPastilleCarte(denomination) {
     return this.getLienEvaluationCarte(denomination)
@@ -231,50 +249,73 @@ class PortefeuillePage {
   }
 
   /**
-   * Retourne l'innerHTML de la card (compatibilité anciens tests PTF_061_x).
+   * Récupère l'innerHTML complet du folder-card (utilisé par PTF_061_1/2/3).
    * @param {string} denomination
    */
   async getInnerHTMLCard(denomination) {
     const card = this.getCardEntreprise(denomination);
-    await card.waitFor({ state: 'visible', timeout: 10000 });
+    await card.waitFor({ state: 'visible', timeout: 15000 });
     return card.innerHTML();
   }
 
+  /**
+   * Clique sur le lien titre d'un folder-card pour accéder à la page dossier.
+   * @param {string} denomination
+   */
+  async cliqueSurCarte(denomination) {
+    const lien = this.getLienTitreCarte(denomination);
+    await lien.waitFor({ state: 'visible', timeout: 15000 });
+    await lien.click();
+  }
+
+  /**
+   * Force le passage en vue carte et attend que les cards soient visibles.
+   */
+  async forcerVueCarte() {
+    if (await this.btnVueCarte.isVisible().catch(() => false)) {
+      await this.btnVueCarte.click();
+    }
+    await this.page.locator('.folder-card').first().waitFor({ state: 'visible', timeout: 10000 });
+  }
+
   // ---------------------------------------------------------------------------
-  // Sélecteurs MODE LISTE
-  // Structure DOM :
-  //   app-list-view tr.cdk-row > td.cdk-column-updateDate  (date JJ/MM/AAAA)
-  //   app-list-view tr.cdk-row > td.cdk-column-relation > span.relation
-  //   app-list-view tr.cdk-row > td.cdk-column-score > app-font-icon.RED|...
-  //   app-list-view tr.cdk-row > td.cdk-column-folder > span (nom entreprise)
-  //   app-list-view tr.cdk-row > td.cdk-column-statut       (statut)
-  // Note : l'id évaluation (#73949) est ABSENT en mode liste.
+  // Vue liste — nouveau DOM : app-data-table > table.wallet-list > tr.hoverable
+  // Classes colonnes : .column-* (sans préfixe cdk-)
+																			 
+																		
+																			 
+																			  
+																	 
+															   
   // ---------------------------------------------------------------------------
 
   /**
-   * Retourne la ligne <tr> d'une entreprise (mode liste).
-   * @param {string} denomination  ex: 'ARTHEMIS'
+   * Retourne le locator de la ligne tr.hoverable d'une entreprise par dénomination.
+   * La colonne nom est th.column-folder contenant app-symbol-label avec le texte.
+   * @param {string} denomination
    */
   getLigneEntreprise(denomination) {
     return this.page
-      .locator('app-list-view tr.cdk-row')
-      .filter({
-        has: this.page.locator('.cdk-column-folder', { hasText: denomination })
-      });
+      .locator('table.wallet-list tr.hoverable')
+			   
+      .filter({ has: this.page.locator('.column-folder', { hasText: denomination }) });
+		 
   }
 
   /**
-   * Retourne la cellule Relation (CLIENT/FOURNISSEUR) — mode liste.
-   * @param {string} denomination  ex: 'ARTHEMIS'
+   * Retourne le libellé du type de relation (CLIENT, FOURNISSEUR, …) — vue liste.
+   * Colonne : td.column-relationship > span.relation
+   * @param {string} denomination
    */
   getRelationTypeListe(denomination) {
-    return this.getLigneEntreprise(denomination)
-      .locator('.cdk-column-relation .relation');
+    return this.getLigneEntreprise(denomination).locator('.column-relationship .relation');
+												 
   }
 
   /**
-   * Retourne la pastille de risque (RED/GREEN/ORANGE) — mode liste.
-   * @param {string} denomination  ex: 'ARTHEMIS'
+   * Retourne la pastille de risque (app-font-icon.RED|GREEN|ORANGE) — vue liste.
+   * Colonne : td.column-score > span.risks > app-font-icon
+   * @param {string} denomination
    */
   getPastilleListe(denomination) {
     return this.getLigneEntreprise(denomination)
@@ -283,19 +324,31 @@ class PortefeuillePage {
   }
 
   /**
-   * Retourne la cellule Statut — mode liste uniquement.
-   * @param {string} denomination  ex: 'ARTHEMIS'
+   * Retourne la cellule statut — vue liste.
+   * Colonne : td.column-statut
+   * @param {string} denomination
    */
   getStatutListe(denomination) {
-    return this.getLigneEntreprise(denomination).locator('.cdk-column-statut');
+    return this.getLigneEntreprise(denomination).locator('.column-statut');
   }
 
   /**
-   * Retourne la cellule date de mise à jour — mode liste uniquement.
-   * @param {string} denomination  ex: 'ARTHEMIS'
+   * Retourne la cellule date de mise à jour — vue liste.
+   * Colonne : td.column-updateDate
+   * @param {string} denomination
    */
   getDateMajListe(denomination) {
-    return this.getLigneEntreprise(denomination).locator('.cdk-column-updateDate');
+    return this.getLigneEntreprise(denomination).locator('.column-updateDate');
+  }
+
+  /**
+   * Force le passage en vue liste et attend que le tableau soit visible.
+   */
+  async forcerVueListe() {
+    if (await this.btnVueListe.isVisible().catch(() => false)) {
+      await this.btnVueListe.click();
+    }
+    await this.page.locator('table.wallet-list').waitFor({ state: 'visible', timeout: 10000 });
   }
 
 }

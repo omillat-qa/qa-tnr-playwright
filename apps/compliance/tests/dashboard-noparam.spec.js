@@ -9,7 +9,7 @@ const { DashboardPage } = require('../pages/dashboard.page');
 
 // ---------------------------------------------------------------------------
 // Setup : session chargée via storageState noparam
-// Le compte noparam atterrit sur /notconfigured après login
+// Le compte noparam atterrit sur /not-configured après login
 // ---------------------------------------------------------------------------
 
 test.beforeEach(async ({ page, baseURL }) => {
@@ -23,8 +23,8 @@ test.beforeEach(async ({ page, baseURL }) => {
 
 test.describe('Dashboard non paramétré', () => {
 
-  test('[ACC_NOPARAM_01] @tnr @dashboard - compte non paramétré : redirige vers /notconfigured', async ({ page }) => {
-    await expect(page).toHaveURL(/notconfigured/, { timeout: 10000 });
+  test('[ACC_NOPARAM_01] @tnr @dashboard - compte non paramétré : redirige vers /not-configured', async ({ page }) => {
+    await expect(page).toHaveURL(/not-configured/, { timeout: 10000 });
   });
 
   test('[ACC_NOPARAM_02] @tnr @dashboard - compte non paramétré : message "Absence de paramétrage" présent', async ({ page }) => {

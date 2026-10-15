@@ -4,54 +4,54 @@
     "siren": "851889063"
   },
   "urls": {
-    "dashboard":    "/dashboard",
+    "dashboard": "/dashboard",
     "portefeuille": "/folders",
-    "evaluation":   "/evaluation/new",
-    "notconfigured": "/notconfigured"
+    "evaluation": "/evaluation/new",
+    "notconfigured": "/not-configured"
   },
   "users": {
     "ua": {
       "admin": {
         "username_env": "TNR_CFB_UA_ADMIN_USERNAME",
         "password_env": "TNR_CFB_UA_ADMIN_PASSWORD",
-        "email":   "CFBv2_TNR@nomail.dns",
-        "id":      "NN425476",
+        "email": "CFBv2_TNR@nomail.dns",
+        "id": "NN425476",
         "contrat": "45317",
-        "profil":  "Administrateur"
+        "profil": "Administrateur"
       },
       "collab": {
         "username_env": "TNR_CFB_UA_COLLAB_USERNAME",
         "password_env": "TNR_CFB_UA_COLLAB_PASSWORD",
-        "email":   "cfbv2_collab_tnr@nomail.dns",
-        "id":      "NN425540",
+        "email": "cfbv2_collab_tnr@nomail.dns",
+        "id": "NN425540",
         "contrat": "45317",
-        "profil":  "Collaborateur"
+        "profil": "Collaborateur"
       },
       "referent": {
         "username_env": "TNR_CFB_UA_REFERENT_USERNAME",
         "password_env": "TNR_CFB_UA_REFERENT_PASSWORD",
-        "email":   "cfbv2_referent_tnr@nomail.dns",
-        "id":      "NN425541",
+        "email": "cfbv2_referent_tnr@nomail.dns",
+        "id": "NN425541",
         "contrat": "45317",
-        "profil":  "Référent"
+        "profil": "Référent"
       },
       "noparam": {
         "username_env": "TNR_CFB_UA_NOPARAM_USERNAME",
         "password_env": "TNR_CFB_UA_NOPARAM_PASSWORD",
-        "email":   "cfbv2_noparam_collab_tnr@nomail.dns",
-        "id":      "",
+        "email": "cfbv2_noparam_collab_tnr@nomail.dns",
+        "id": "",
         "contrat": "",
-        "profil":  "noparam"
+        "profil": "noparam"
       }
     },
     "prod": {
       "admin": {
         "username_env": "TNR_CFB_PROD_ADMIN_USERNAME",
         "password_env": "TNR_CFB_PROD_ADMIN_PASSWORD",
-        "email":   "CFBv2_TNR@nomail.dns",
-        "id":      "NN434037",
+        "email": "CFBv2_TNR@nomail.dns",
+        "id": "NN434037",
         "contrat": "50614",
-        "profil":  "Administrateur"
+        "profil": "Administrateur"
       }
     }
   }

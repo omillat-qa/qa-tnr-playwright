@@ -33,9 +33,9 @@ setup('authentification CFB', async ({ page, baseURL }, testInfo) => {
   await openLoginForm(page, baseURL);
   await submitCredentials(page, { username, password });
 
-  // Profil noparam → redirige vers /notconfigured au lieu de /dashboard
+  // Profil noparam → redirige vers /not-configured au lieu de /dashboard
   if (profil === 'NOPARAM') {
-    await page.waitForURL('**/notconfigured**', { timeout: 15000 });
+    await page.waitForURL('**/not-configured**', { timeout: 15000 });
   } else {
     await page.waitForURL('**/dashboard**', { timeout: 15000 });
     await acceptAnyCookieBanner(page);
