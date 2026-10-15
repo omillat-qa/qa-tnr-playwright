@@ -12,12 +12,17 @@
 //         log.txt                   ← logs du run
 //     history-[projet-perf].json    ← historique perf 90 jours
 //     history-[projet-perf].csv     ← idem CSV pour Excel
+//     data/
+//       runs-AAAA-MM.jsonl          ← une ligne par projet et par run
+//       tests-AAAA-MM.jsonl         ← une ligne par test (dernière tentative)
+//       mesures-AAAA-MM.jsonl       ← une ligne par mesure (perf, chargements)
 
 const fs   = require('fs');
 const path = require('path');
 
 const OUTPUT_DIR = path.resolve(__dirname, '../../test-output');
 const RUNS_DIR   = path.join(OUTPUT_DIR, 'runs');
+const DATA_DIR   = path.join(OUTPUT_DIR, 'data');
 
 function makeTimestamp(date) {
   const d = date || new Date();
@@ -119,6 +124,16 @@ class TnrReporter {
   onEnd(result) {
     const dureeRun = Date.now() - this.runDebut;
 
+    // Aucun test exécuté (--list, --grep sans correspondance…) → pas de run à archiver :
+    // un run vide fausserait l'historique et serait pris pour « le dernier run » par le mailer
+    if (this.resultats.length === 0) {
+      try {
+        if (!fs.readdirSync(this.runDir).length) fs.rmdirSync(this.runDir);
+      } catch { /* dossier déjà absent ou non vide : on le laisse */ }
+      console.log('[TNR Reporter] Aucun test exécuté — run non archivé');
+      return;
+    }
+
     // Compteurs globaux — exclut Setup et skipped
     const testsComptables = this.resultats.filter(r => r.module !== 'Setup' && r.statut !== 'skipped');
     const total  = testsComptables.length;
@@ -174,7 +189,8 @@ class TnrReporter {
       output.recap_modules.forEach(m => console.log(m.libelle));
       console.log('-------------------\n');
 
-      this._archiverMetrics();
+      const metricsRun = this._archiverMetrics();
+      this._exporterDonnees(output, metricsRun);
 
     } catch (e) {
       console.error('[TNR Reporter] Erreur écriture résultats:', e.message);
@@ -205,8 +221,10 @@ class TnrReporter {
       for (const [projet, mesures] of Object.entries(parProjet)) {
         this._ecrireHistorique(projet, mesures);
       }
+      return metricsRun;
     } catch (e) {
       console.warn('[TNR Reporter] Archivage métriques :', e.message);
+      return [];
     }
   }
 
@@ -243,6 +261,53 @@ class TnrReporter {
 
     } catch (e) {
       console.warn('[TNR Reporter] Archivage métriques :', e.message);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Export données normalisées — test-output/data/[type]-AAAA-MM.jsonl
+  // Une ligne JSON horodatée par événement : source unique pour Grafana / Prometheus / Excel
+  // ---------------------------------------------------------------------------
+
+  _exporterDonnees(output, metricsRun) {
+    try {
+      const runId = output.run.id;
+      const mois  = output.run.debut.slice(0, 7);
+
+      // app / env / browser par projet (depuis les tests) → enrichit les mesures
+      const metaProjet = {};
+      for (const t of output.tests) {
+        metaProjet[t.projet] ||= { app: t.app, env: t.env, browser: t.browser };
+      }
+
+      const runs = output.recap_projets.map(p => {
+        const tests = output.tests.filter(t => t.projet === p.projet);
+        return {
+          run_id:   runId,
+          debut:    output.run.debut,
+          fin:      output.run.fin,
+          projet:   p.projet,
+          ...metaProjet[p.projet],
+          total:    p.total,
+          passes:   p.passes,
+          echecs:   p.echecs,
+          skips:    p.skips,
+          flaky:    tests.filter(t => t.statut === 'passed' && t.tentative > 0).length,
+          duree_tests_ms: tests.reduce((s, t) => s + (t.duree_ms || 0), 0),
+        };
+      });
+      const tests   = output.tests.map(t => ({ run_id: runId, ...t }));
+      const mesures = metricsRun.map(m => ({ run_id: runId, ...metaProjet[m.projet], ...m }));
+
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+      for (const [type, lignes] of Object.entries({ runs, tests, mesures })) {
+        if (!lignes.length) continue;
+        const fichier = path.join(DATA_DIR, `${type}-${mois}.jsonl`);
+        fs.appendFileSync(fichier, lignes.map(l => JSON.stringify(l)).join('\n') + '\n');
+      }
+      console.log(`[TNR Reporter] Données exportées : data/*-${mois}.jsonl (${runs.length} run(s), ${tests.length} test(s), ${mesures.length} mesure(s))`);
+    } catch (e) {
+      console.warn('[TNR Reporter] Export données :', e.message);
     }
   }
 }
