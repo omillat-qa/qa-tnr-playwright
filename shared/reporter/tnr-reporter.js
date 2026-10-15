@@ -24,6 +24,9 @@ const OUTPUT_DIR = path.resolve(__dirname, '../../test-output');
 const RUNS_DIR   = path.join(OUTPUT_DIR, 'runs');
 const DATA_DIR   = path.join(OUTPUT_DIR, 'data');
 
+// `--list` : Playwright appelle onBegin/onEnd sans rien exécuter → rien à archiver
+const MODE_LISTE = process.argv.includes('--list');
+
 function makeTimestamp(date) {
   const d = date || new Date();
   const pad = n => String(n).padStart(2, '0');
@@ -38,6 +41,7 @@ class TnrReporter {
     this.resultats = [];
     this.suites    = {};   // { [module]: { total, passes, echecs, skips, tests[] } }
     this.projetsMap = {};  // { [nomProjet]: { total, passes, echecs, skips } }
+    this.projetsPrevus = {}; // { [nomProjet]: { prevus, metadata, dependances[] } } — depuis onBegin
   }
 
   onBegin(config, suite) {
@@ -51,6 +55,17 @@ class TnrReporter {
 
     console.log(`\n[TNR Reporter] Début du run — ${suite.allTests().length} tests`);
     console.log(`[TNR Reporter] Dossier : ${this.runDir}`);
+
+    // Tests prévus par projet : permet de tracer les projets jamais exécutés (setup KO)
+    // et les tests non joués (run interrompu, --max-failures)
+    for (const s of suite.suites) {
+      const projet = config.projects.find(p => p.name === s.title) || {};
+      this.projetsPrevus[s.title] = {
+        prevus:      s.allTests().length,
+        metadata:    projet.metadata || {},
+        dependances: projet.dependencies || [],
+      };
+    }
 
     // Perf + TNR dans le même run → mesures perf faussées par la charge parallèle
     const projetsLances = suite.suites.filter(s => s.allTests().length).map(s => s.title);
@@ -124,13 +139,13 @@ class TnrReporter {
   onEnd(result) {
     const dureeRun = Date.now() - this.runDebut;
 
-    // Aucun test exécuté (--list, --grep sans correspondance…) → pas de run à archiver :
-    // un run vide fausserait l'historique et serait pris pour « le dernier run » par le mailer
-    if (this.resultats.length === 0) {
+    // --list : aucun run réel → pas d'archive (sinon dossier vide pris pour « le dernier run »).
+    // Un vrai run sans résultat (setup bloqué, timeout global) est archivé : c'est un incident.
+    if (MODE_LISTE) {
       try {
         if (!fs.readdirSync(this.runDir).length) fs.rmdirSync(this.runDir);
       } catch { /* dossier déjà absent ou non vide : on le laisse */ }
-      console.log('[TNR Reporter] Aucun test exécuté — run non archivé');
+      console.log('[TNR Reporter] Mode --list — run non archivé');
       return;
     }
 
@@ -280,18 +295,41 @@ class TnrReporter {
         metaProjet[t.projet] ||= { app: t.app, env: t.env, browser: t.browser };
       }
 
-      const runs = output.recap_projets.map(p => {
-        const tests = output.tests.filter(t => t.projet === p.projet);
+      // Une ligne par projet prévu (hors setup), même s'il n'a rien exécuté
+      const recapParProjet = Object.fromEntries(output.recap_projets.map(p => [p.projet, p]));
+      const nomsProjets = Object.keys(this.projetsPrevus).filter(n => !n.startsWith('setup-'));
+
+      const runs = nomsProjets.map(nom => {
+        const p      = recapParProjet[nom] || { total: 0, passes: 0, echecs: 0, skips: 0 };
+        const prevu  = this.projetsPrevus[nom];
+        const tests  = output.tests.filter(t => t.projet === nom);
+        const nonExecutes = Math.max(0, prevu.prevus - tests.length);
+        const setupKo = output.tests.some(t =>
+          prevu.dependances.includes(t.projet) && ['failed', 'timedOut'].includes(t.statut));
+
+        // ok | ko (échecs) | incomplet (tests non joués) | non_execute (rien n'a tourné)
+        const statut = tests.length === 0 ? 'non_execute'
+          : p.echecs > 0                  ? 'ko'
+          : nonExecutes > 0               ? 'incomplet'
+          :                                 'ok';
+
         return {
           run_id:   runId,
           debut:    output.run.debut,
           fin:      output.run.fin,
-          projet:   p.projet,
-          ...metaProjet[p.projet],
+          projet:   nom,
+          app:      prevu.metadata.app     || metaProjet[nom]?.app     || 'inconnue',
+          env:      prevu.metadata.env     || metaProjet[nom]?.env     || 'inconnu',
+          browser:  prevu.metadata.browser || metaProjet[nom]?.browser || 'inconnu',
+          statut,
+          statut_run: output.run.statut,   // passed | failed | timedout | interrupted (Playwright)
+          setup_ko:   setupKo,
           total:    p.total,
           passes:   p.passes,
           echecs:   p.echecs,
           skips:    p.skips,
+          prevus:       prevu.prevus,
+          non_executes: nonExecutes,
           flaky:    tests.filter(t => t.statut === 'passed' && t.tentative > 0).length,
           duree_tests_ms: tests.reduce((s, t) => s + (t.duree_ms || 0), 0),
         };

@@ -270,9 +270,11 @@ async function main() {
   }
 
   const run   = results.run;
-  const sujet = run.echecs === 0
+  const sujet = run.echecs === 0 && run.statut === 'passed' && run.total > 0
     ? `✅ TNR ${appConfig.label} — ${run.passes}/${run.total} OK`
-    : `❌ TNR ${appConfig.label} — ${run.echecs} échec(s) sur ${run.total}`;
+    : run.echecs > 0
+      ? `❌ TNR ${appConfig.label} — ${run.echecs} échec(s) sur ${run.total}`
+      : `⚠️ TNR ${appConfig.label} — run ${run.statut}, ${run.passes}/${run.total} exécuté(s)`;
 
   const html        = genererHTML(results, { app, rapportUrl });
   const transporter = nodemailer.createTransport(SMTP);
