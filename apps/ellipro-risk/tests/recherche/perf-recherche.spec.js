@@ -14,20 +14,22 @@ const motscles = require('../../../../test-data/motscles-recherche.json');
 // ---------------------------------------------------------------------------
 
 test.beforeEach(async ({ page, baseURL }) => {
-  await page.goto(`${baseURL}/AppEllipro/navigation/main-nav/(sideRouter:dashboard)`,
+  // Racine de l'app : Angular redirige vers l'accueil (route renommée en v1.36.17.1)
+  await page.goto(`${baseURL}/AppEllipro/`,
     { waitUntil: 'domcontentloaded' });
 
-  // Gérer le bandeau cookies s'il apparaît
-  const btnCookies = page.locator('#acceptCookiesBtn, button:has-text("J\'ACCEPTE")').first();
-  if (await btnCookies.isVisible({ timeout: 3000 }).catch(() => false)) {
+  // Bandeau cookies : il s'affiche après la redirection Keycloak, on attend donc
+  // le premier élément visible (bandeau OU champ). isVisible() n'attend pas.
+  const recherche  = new RecherchePage(page);
+  const btnCookies = page.getByTestId('acceptCookiesBtn')
+    .or(page.locator('#acceptCookiesBtn, button:has-text("J\'ACCEPTE")')).first();
+  await btnCookies.or(recherche.champRecherche).first().waitFor({ state: 'visible', timeout: 15000 });
+  if (await btnCookies.isVisible()) {
     await btnCookies.click();
     await page.waitForTimeout(300);
   }
 
-  await page.waitForSelector(
-    'input[placeholder="Recherche par raison sociale ou identifiant"]',
-    { timeout: 15000 }
-  );
+  await recherche.champRecherche.waitFor({ state: 'visible', timeout: 15000 });
 });
 
 // ---------------------------------------------------------------------------

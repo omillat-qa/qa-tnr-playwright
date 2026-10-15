@@ -15,10 +15,10 @@ class RecherchePage {
   constructor(page) {
     this.page = page;
 
-    this.champRecherche    = page.locator('input[placeholder="Recherche par raison sociale ou identifiant"]');
+    this.champRecherche    = page.getByTestId('search-input');
     this.carteResultat     = page.locator('#card-company-result').first();
     this.messageAucunResultat = page.locator('h6:has-text("Pas de résultat")').first();
-    this.banniereResultats = page.locator('section.resultInfoBanner h6').first();
+    this.banniereResultats = page.getByRole('heading', { name: /\d+\s+résultat/ }).first();
   }
 
   // ---------------------------------------------------------------------------
@@ -86,7 +86,7 @@ class RecherchePage {
     // Nb résultats si OK
     if (statut === 'ok') {
       try {
-        const texte = await this.banniereResultats.innerText().catch(() => '');
+        const texte = await this.banniereResultats.innerText({ timeout: 5000 }).catch(() => '');
         const match = texte.match(/(\d+)\s+résultat/);
         if (match) nbResultats = parseInt(match[1], 10);
       } catch {}
