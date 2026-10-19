@@ -9,6 +9,7 @@ const { test: setup } = require('@playwright/test');
 const path = require('path');
 const { openLoginForm, submitCredentials } = require('../../../shared/pages/keycloak.page');
 const { acceptAnyCookieBanner, closeAnnouncementPopup } = require('../../../shared/pages/consent.page');
+const { annoterVersionApp } = require('../../../shared/utils/version-app');
 
 setup('authentification CFB', async ({ page, baseURL }, testInfo) => {
   const env    = (testInfo.project.metadata.env    || 'ua').toUpperCase();
@@ -42,6 +43,8 @@ setup('authentification CFB', async ({ page, baseURL }, testInfo) => {
     await closeAnnouncementPopup(page);
   }
 
+  // Version applicative (meta generator) → version_app / build_app dans data/*.jsonl
+  await annoterVersionApp(page, testInfo);
   await page.context().storageState({ path: SESSION_FILE });
   console.log(`[auth.setup] Session CFB ${env} ${profil} sauvegardée : ${SESSION_FILE}`);
 });

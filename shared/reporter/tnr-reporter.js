@@ -97,6 +97,9 @@ class TnrReporter {
     // Tests perf : un test par mot-clé, tous d'id "PERF" → le mot-clé sert de clé unique
     // (même champ que dans les mesures : jointure tests ↔ mesures sur run_id + projet + motcle)
     const motcleMatch = idFonctionnel === 'PERF' ? test.title.match(/"([^"]+)"/) : null;
+    // Version applicative posée par annoterVersionApp() (shared/utils/version-app.js)
+    const annotations = [...(result.annotations || []), ...test.annotations];
+    const annotation  = type => annotations.find(a => a.type === type)?.description || null;
 
     const entree = {
       id:        idFonctionnel,
@@ -107,6 +110,8 @@ class TnrReporter {
       app:       metadata.app     || 'inconnue',
       env:       metadata.env     || 'inconnu',
       browser:   metadata.browser || 'inconnu',
+      version_app: annotation('version_app'),
+      build_app:   annotation('build_app'),
       statut:    result.status,
       duree_ms:  result.duration,
       tentative: result.retry,   // > 0 = passé après retry (flaky)
@@ -317,6 +322,11 @@ class TnrReporter {
           : nonExecutes > 0               ? 'incomplet'
           :                                 'ok';
 
+        // Version : lue par le setup dont dépend le projet (une lecture par run),
+        // sinon par les tests eux-mêmes (projets sans setup)
+        const sources  = [...tests, ...output.tests.filter(t => prevu.dependances.includes(t.projet))];
+        const versionT = [...sources].reverse().find(t => t.version_app) || {};
+
         return {
           run_id:   runId,
           debut:    output.run.debut,
@@ -325,6 +335,8 @@ class TnrReporter {
           app:      prevu.metadata.app     || metaProjet[nom]?.app     || 'inconnue',
           env:      prevu.metadata.env     || metaProjet[nom]?.env     || 'inconnu',
           browser:  prevu.metadata.browser || metaProjet[nom]?.browser || 'inconnu',
+          version_app: versionT.version_app || null,
+          build_app:   versionT.build_app   || null,
           statut,
           statut_run: output.run.statut,   // passed | failed | timedout | interrupted (Playwright)
           setup_ko:   setupKo,

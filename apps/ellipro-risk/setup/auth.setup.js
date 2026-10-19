@@ -8,6 +8,7 @@ const { test: setup } = require('@playwright/test');
 const path = require('path');
 const { openLoginForm, submitCredentials } = require('../../../shared/pages/keycloak.page');
 const { acceptAnyCookieBanner } = require('../../../shared/pages/consent.page');
+const { annoterVersionApp } = require('../../../shared/utils/version-app');
 
 setup('authentification Ellipro Risk', async ({ page, baseURL }, testInfo) => {
   const env = (testInfo.project.metadata.env || 'ua').toUpperCase();
@@ -28,6 +29,8 @@ setup('authentification Ellipro Risk', async ({ page, baseURL }, testInfo) => {
 
   await page.waitForURL('**/AppEllipro/navigation/**', { timeout: 15000 });
 
+  // Version applicative (meta generator) → version_app / build_app dans data/*.jsonl
+  await annoterVersionApp(page, testInfo);
   await page.context().storageState({ path: SESSION_FILE });
   console.log(`[auth.setup] Session Ellipro Risk ${env} sauvegardée : ${SESSION_FILE}`);
 });

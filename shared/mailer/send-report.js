@@ -83,6 +83,15 @@ function genererHTML(results, { app, rapportUrl }) {
   const dateRun       = new Date(run.debut).toLocaleString('fr-FR', { timeZone: 'Europe/Paris' });
   const nbProjets     = run.projets?.length || 1;
 
+  // Version applicative lue par les setups (shared/utils/version-app.js) → bandeau titre
+  // Plusieurs valeurs distinctes = déploiement pendant le run → toutes affichées
+  const versions = [...new Set((results.tests || [])
+    .filter(t => t.version_app)
+    .map(t => t.build_app
+      ? `${t.version_app} — build du ${new Date(t.build_app).toLocaleString('fr-FR', { timeZone: 'Europe/Paris' })}`
+      : t.version_app))];
+  const ligneVersion = versions.length ? `Version : ${versions.join(' / ')}` : '';
+
   // ---------------------------------------------------------------------------
   // KPIs
   // ---------------------------------------------------------------------------
@@ -222,6 +231,7 @@ function genererHTML(results, { app, rapportUrl }) {
     <p style="margin:4px 0 0;opacity:0.8;font-size:13px">
       Run : ${run.id} | ${dateRun}${nbProjets > 1 ? ` | ${nbProjets} projets` : ''}
     </p>
+    ${ligneVersion ? `<p style="margin:2px 0 0;opacity:0.8;font-size:13px">${ligneVersion}</p>` : ''}
   </div>
   <div style="background:#f8fafc;border:1px solid #e5e7eb;padding:16px 24px">
     ${kpis}
