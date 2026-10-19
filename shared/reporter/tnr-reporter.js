@@ -19,6 +19,8 @@
 
 const fs   = require('fs');
 const path = require('path');
+const os   = require('os');
+const { execSync } = require('child_process');
 
 const OUTPUT_DIR = path.resolve(__dirname, '../../test-output');
 const RUNS_DIR   = path.join(OUTPUT_DIR, 'runs');
@@ -26,6 +28,19 @@ const DATA_DIR   = path.join(OUTPUT_DIR, 'data');
 
 // `--list` : Playwright appelle onBegin/onEnd sans rien exécuter → rien à archiver
 const MODE_LISTE = process.argv.includes('--list');
+
+// Machine et commit du projet : identifient le run quand plusieurs VM exécutent les tests
+// commit_git suffixé "-modifie" si des fichiers suivis ont été modifiés sans être commités
+const MACHINE    = os.hostname();
+const COMMIT_GIT = (() => {
+  const git = cmd => execSync(`git ${cmd}`, { cwd: path.resolve(__dirname, '../..'), stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+  try {
+    const sha = git('rev-parse --short HEAD');
+    return git('status --porcelain --untracked-files=no') ? `${sha}-modifie` : sha;
+  } catch {
+    return null;   // pas de git (copie hors dépôt) → champ vide, le run n'est pas bloqué
+  }
+})();
 
 function makeTimestamp(date) {
   const d = date || new Date();
@@ -177,6 +192,8 @@ class TnrReporter {
     const output = {
       run: {
         id:       path.basename(this.runDir),
+        machine:    MACHINE,
+        commit_git: COMMIT_GIT,
         projets:  Object.keys(this.projetsMap),
         debut:    new Date(this.runDebut).toISOString(),
         fin:      new Date().toISOString(),
@@ -329,6 +346,8 @@ class TnrReporter {
 
         return {
           run_id:   runId,
+          machine:    MACHINE,
+          commit_git: COMMIT_GIT,
           debut:    output.run.debut,
           fin:      output.run.fin,
           projet:   nom,
@@ -350,8 +369,8 @@ class TnrReporter {
           duree_tests_ms: tests.reduce((s, t) => s + (t.duree_ms || 0), 0),
         };
       });
-      const tests   = output.tests.map(t => ({ run_id: runId, ...t }));
-      const mesures = metricsRun.map(m => ({ run_id: runId, ...metaProjet[m.projet], ...m }));
+      const tests   = output.tests.map(t => ({ run_id: runId, machine: MACHINE, ...t }));
+      const mesures = metricsRun.map(m => ({ run_id: runId, machine: MACHINE, ...metaProjet[m.projet], ...m }));
 
       fs.mkdirSync(DATA_DIR, { recursive: true });
       for (const [type, lignes] of Object.entries({ runs, tests, mesures })) {
