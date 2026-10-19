@@ -42,7 +42,7 @@ async function attendreStabilite(page, timeout = 15000) {
 // Suite principale
 // ---------------------------------------------------------------------------
 
-test.describe('Tâches @tnr @taches', () => {
+test.describe('Tâches', { tag: ['@tnr', '@taches'] }, () => {
 
   let tp;
 
