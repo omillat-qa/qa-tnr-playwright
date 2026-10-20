@@ -53,7 +53,7 @@ function parseArgs() {
   return args;
 }
 
-function trouverDernierRun(runsDir, runId) {
+function trouverDernierRun(runsDir, runId, { app, env } = {}) {
   if (runId) {
     const p = path.join(runsDir, runId, 'results.json');
     if (fs.existsSync(p)) return p;
@@ -64,8 +64,15 @@ function trouverDernierRun(runsDir, runId) {
     .filter(d => d.startsWith('run-') && fs.existsSync(path.join(runsDir, d, 'results.json')))
     .sort()
     .reverse();
-  if (!runs.length) throw new Error('Aucun run trouvé dans test-output/runs/');
-  return path.join(runsDir, runs[0], 'results.json');
+  // Dernier run qui concerne l'app (et l'env) demandés — setup compris : un setup KO est un incident à envoyer
+  for (const d of runs) {
+    const fichier = path.join(runsDir, d, 'results.json');
+    try {
+      const tests = JSON.parse(fs.readFileSync(fichier, 'utf8')).tests || [];
+      if (tests.some(t => t.app === app && (!env || t.env === env))) return fichier;
+    } catch { /* results.json illisible : run suivant */ }
+  }
+  throw new Error(`Aucun run ${app}${env ? ` ${env}` : ''} trouvé dans test-output/runs/`);
 }
 
 // ---------------------------------------------------------------------------
@@ -267,7 +274,7 @@ async function main() {
   const runId      = args.run || null;
 
   const runsDir     = path.resolve(__dirname, '../../test-output/runs');
-  const resultsFile = trouverDernierRun(runsDir, runId);
+  const resultsFile = trouverDernierRun(runsDir, runId, { app, env: args.env });
 
   console.log(`[mailer] Lecture : ${resultsFile}`);
 
