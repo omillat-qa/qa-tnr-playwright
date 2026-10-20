@@ -47,7 +47,7 @@
           "editorMode": "code",
           "rawQuery": true,
           "format": "table",
-          "rawSql": "SELECT premier_run AS time, app || ' ' || env || ' : version ' || version_app AS text, app AS tags\n    FROM tnr.v_versions\n    WHERE $__timeFilter(premier_run) AND app IN (${app:sqlstring})"
+          "rawSql": "SELECT premier_run AS time,\n           app || ' ' || env || ' : version ' || version_app\n             || coalesce(' (build du ' || to_char(build_app AT TIME ZONE 'Europe/Paris', 'DD/MM/YYYY HH24:MI') || ')', '') AS text,\n           app AS tags\n    FROM tnr.v_versions\n    WHERE $__timeFilter(premier_run) AND app IN (${app:sqlstring})"
         }
       }
     ]

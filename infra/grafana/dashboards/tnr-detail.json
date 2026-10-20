@@ -1,0 +1,979 @@
+{
+  "uid": "tnr-detail",
+  "title": "TNR — Détail",
+  "description": "Historique d'un test et détail d'un run, avec liens vers les rapports Playwright (source : tnr.v_tests / tnr.v_runs)",
+  "tags": [
+    "tnr",
+    "playwright"
+  ],
+  "timezone": "browser",
+  "editable": true,
+  "graphTooltip": 1,
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "",
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      },
+      {
+        "name": "Versions déployées",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "tnr-postgres"
+        },
+        "enable": true,
+        "iconColor": "purple",
+        "target": {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT premier_run AS time,\n           app || ' ' || env || ' : version ' || version_app\n             || coalesce(' (build du ' || to_char(build_app AT TIME ZONE 'Europe/Paris', 'DD/MM/YYYY HH24:MI') || ')', '') AS text,\n           app AS tags\n    FROM tnr.v_versions\n    WHERE $__timeFilter(premier_run) AND app IN (${app:sqlstring})"
+        }
+      }
+    ]
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "app",
+        "label": "Application",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "tnr-postgres"
+        },
+        "query": "SELECT DISTINCT app FROM tnr.runs ORDER BY 1",
+        "definition": "SELECT DISTINCT app FROM tnr.runs ORDER BY 1",
+        "refresh": 2,
+        "sort": 1,
+        "multi": true,
+        "includeAll": true,
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "options": [],
+        "hide": 0
+      },
+      {
+        "name": "env",
+        "label": "Environnement",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "tnr-postgres"
+        },
+        "query": "SELECT DISTINCT env FROM tnr.runs ORDER BY 1",
+        "definition": "SELECT DISTINCT env FROM tnr.runs ORDER BY 1",
+        "refresh": 2,
+        "sort": 1,
+        "multi": true,
+        "includeAll": true,
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "options": [],
+        "hide": 0
+      },
+      {
+        "name": "machine",
+        "label": "Machine",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "tnr-postgres"
+        },
+        "query": "SELECT DISTINCT machine FROM tnr.runs ORDER BY 1",
+        "definition": "SELECT DISTINCT machine FROM tnr.runs ORDER BY 1",
+        "refresh": 2,
+        "sort": 1,
+        "multi": true,
+        "includeAll": true,
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "options": [],
+        "hide": 0
+      },
+      {
+        "name": "test",
+        "label": "Test",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "tnr-postgres"
+        },
+        "query": "SELECT DISTINCT cle_test FROM tnr.v_tests WHERE app IN (${app:sqlstring}) AND env IN (${env:sqlstring}) AND machine IN (${machine:sqlstring}) AND NOT est_setup ORDER BY 1",
+        "definition": "SELECT DISTINCT cle_test FROM tnr.v_tests WHERE app IN (${app:sqlstring}) AND env IN (${env:sqlstring}) AND machine IN (${machine:sqlstring}) AND NOT est_setup ORDER BY 1",
+        "refresh": 2,
+        "sort": 1,
+        "multi": false,
+        "includeAll": false,
+        "current": {},
+        "options": [],
+        "hide": 0
+      },
+      {
+        "name": "run",
+        "label": "Run",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "tnr-postgres"
+        },
+        "query": "\n      SELECT run_id FROM tnr.v_runs WHERE app IN (${app:sqlstring}) AND env IN (${env:sqlstring}) AND machine IN (${machine:sqlstring})\n      GROUP BY run_id ORDER BY max(debut) DESC LIMIT 300",
+        "definition": "\n      SELECT run_id FROM tnr.v_runs WHERE app IN (${app:sqlstring}) AND env IN (${env:sqlstring}) AND machine IN (${machine:sqlstring})\n      GROUP BY run_id ORDER BY max(debut) DESC LIMIT 300",
+        "refresh": 2,
+        "sort": 0,
+        "multi": false,
+        "includeAll": false,
+        "current": {},
+        "options": [],
+        "hide": 0
+      },
+      {
+        "name": "url_rapports",
+        "label": "Serveur des rapports",
+        "type": "constant",
+        "hide": 2,
+        "query": "http://localhost:8081",
+        "current": {
+          "text": "http://localhost:8081",
+          "value": "http://localhost:8081"
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "Test : $test",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "panels": []
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Exécutions",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "tnr-postgres"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 1
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT count(*) AS \"Exécutions\" FROM tnr.v_tests\n  WHERE $__timeFilter(horodatage) AND app IN (${app:sqlstring}) AND env IN (${env:sqlstring}) AND machine IN (${machine:sqlstring}) AND cle_test = ${test:sqlstring} AND statut <> 'skipped'"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Réussite",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "tnr-postgres"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 1
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT round(100.0 * count(*) FILTER (WHERE statut = 'passed') / nullif(count(*), 0), 1) AS \"Réussite\"\n  FROM tnr.v_tests WHERE $__timeFilter(horodatage) AND app IN (${app:sqlstring}) AND env IN (${env:sqlstring}) AND machine IN (${machine:sqlstring}) AND cle_test = ${test:sqlstring} AND statut <> 'skipped'"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "color": {
+            "mode": "thresholds",
+            "fixedColor": "blue"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 90
+              },
+              {
+                "color": "green",
+                "value": 100
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Durée médiane",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "tnr-postgres"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 1
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT round(percentile_cont(0.5) WITHIN GROUP (ORDER BY duree_ms)) AS \"Durée médiane\"\n  FROM tnr.v_tests WHERE $__timeFilter(horodatage) AND app IN (${app:sqlstring}) AND env IN (${env:sqlstring}) AND machine IN (${machine:sqlstring}) AND cle_test = ${test:sqlstring} AND statut = 'passed'"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Dernier statut",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "tnr-postgres"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 1
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT statut AS \"Dernier statut\" FROM tnr.v_tests\n  WHERE $__timeFilter(horodatage) AND app IN (${app:sqlstring}) AND env IN (${env:sqlstring}) AND machine IN (${machine:sqlstring}) AND cle_test = ${test:sqlstring} ORDER BY horodatage DESC LIMIT 1"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 6,
+      "type": "table",
+      "title": "Historique du test",
+      "description": "📊 Rapport ouvre le rapport Playwright sur ce test (trace, captures, erreur). Clic sur un run → ses tests.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "tnr-postgres"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT horodatage AS \"Date\", statut AS \"Statut\", round(duree_ms / 1000.0, 1) AS \"Durée (s)\", tentative AS \"Retry\",\n         machine AS \"Machine\", projet AS \"Projet\", version_app AS \"Version\", commit_git AS \"Commit\",\n         erreur AS \"Erreur\", run_id AS \"Run\",\n         CASE WHEN rapport_html IS NOT NULL THEN '📊 Rapport' END AS \"Rapport\",\n         rapport_html || coalesce('#?testId=' || pw_id, '') AS lien\n  FROM tnr.v_tests WHERE $__timeFilter(horodatage) AND app IN (${app:sqlstring}) AND env IN (${env:sqlstring}) AND machine IN (${machine:sqlstring}) AND cle_test = ${test:sqlstring}\n  ORDER BY horodatage DESC LIMIT 500"
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "filterable": true
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Statut"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "ok": {
+                        "color": "green",
+                        "index": 0
+                      },
+                      "passed": {
+                        "color": "green",
+                        "index": 1
+                      },
+                      "ko": {
+                        "color": "red",
+                        "index": 2
+                      },
+                      "failed": {
+                        "color": "red",
+                        "index": 3
+                      },
+                      "timedOut": {
+                        "color": "red",
+                        "index": 4
+                      },
+                      "incomplet": {
+                        "color": "orange",
+                        "index": 5
+                      },
+                      "interrupted": {
+                        "color": "orange",
+                        "index": 6
+                      },
+                      "non_execute": {
+                        "color": "red",
+                        "text": "non exécuté",
+                        "index": 7
+                      },
+                      "skipped": {
+                        "color": "text",
+                        "index": 8
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Run"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Détail du run",
+                    "targetBlank": false,
+                    "url": "/d/tnr-detail/tnr-detail?var-run=${__value.raw:percentencode}&${app:queryparam}&${env:queryparam}&${machine:queryparam}&${__url_time_range}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Rapport"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Rapport Playwright",
+                    "targetBlank": true,
+                    "url": "${url_rapports}/${__data.fields.lien}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "lien"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Durée du test",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "tnr-postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 15
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "time_series",
+          "rawSql": "SELECT horodatage AS time, machine AS metric, duree_ms AS value\n  FROM tnr.v_tests WHERE $__timeFilter(horodatage) AND app IN (${app:sqlstring}) AND env IN (${env:sqlstring}) AND machine IN (${machine:sqlstring}) AND cle_test = ${test:sqlstring} AND statut <> 'skipped'\n  ORDER BY 1"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "lastNotNull",
+            "mean"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 0,
+            "showPoints": "always",
+            "pointSize": 6,
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none"
+            }
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 8,
+      "type": "row",
+      "title": "Run : $run",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 23
+      },
+      "panels": []
+    },
+    {
+      "id": 9,
+      "type": "table",
+      "title": "Projets du run",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "tnr-postgres"
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 24,
+        "x": 0,
+        "y": 24
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT debut AS \"Début\", projet AS \"Projet\", machine AS \"Machine\", statut AS \"Statut\",\n         passes || ' / ' || total AS \"Passés\", echecs AS \"Échecs\", flaky AS \"Flaky\", non_executes AS \"Non joués\",\n         version_app AS \"Version\", commit_git AS \"Commit\", round(duree_tests_ms / 60000.0, 1) AS \"Durée (min)\",\n         CASE WHEN rapport_html IS NOT NULL THEN '📊 Rapport' END AS \"Rapport\",\n         rapport_html AS lien\n  FROM tnr.v_runs WHERE app IN (${app:sqlstring}) AND env IN (${env:sqlstring}) AND machine IN (${machine:sqlstring}) AND run_id = ${run:sqlstring} ORDER BY projet"
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "filterable": true
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Statut"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "ok": {
+                        "color": "green",
+                        "index": 0
+                      },
+                      "passed": {
+                        "color": "green",
+                        "index": 1
+                      },
+                      "ko": {
+                        "color": "red",
+                        "index": 2
+                      },
+                      "failed": {
+                        "color": "red",
+                        "index": 3
+                      },
+                      "timedOut": {
+                        "color": "red",
+                        "index": 4
+                      },
+                      "incomplet": {
+                        "color": "orange",
+                        "index": 5
+                      },
+                      "interrupted": {
+                        "color": "orange",
+                        "index": 6
+                      },
+                      "non_execute": {
+                        "color": "red",
+                        "text": "non exécuté",
+                        "index": 7
+                      },
+                      "skipped": {
+                        "color": "text",
+                        "index": 8
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Rapport"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Rapport Playwright",
+                    "targetBlank": true,
+                    "url": "${url_rapports}/${__data.fields.lien}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "lien"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "type": "table",
+      "title": "Tests du run",
+      "description": "Échecs en tête. Clic sur un test → son historique ; 📊 Rapport → le test dans le rapport Playwright.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "tnr-postgres"
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 24,
+        "x": 0,
+        "y": 29
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT statut AS \"Statut\", cle_test AS \"Test\", module AS \"Module\", titre AS \"Titre\", projet AS \"Projet\",\n         round(duree_ms / 1000.0, 1) AS \"Durée (s)\", tentative AS \"Retry\", erreur AS \"Erreur\",\n         CASE WHEN rapport_html IS NOT NULL THEN '📊 Rapport' END AS \"Rapport\",\n         rapport_html || coalesce('#?testId=' || pw_id, '') AS lien\n  FROM tnr.v_tests WHERE app IN (${app:sqlstring}) AND env IN (${env:sqlstring}) AND machine IN (${machine:sqlstring}) AND run_id = ${run:sqlstring}\n  ORDER BY est_echec DESC, est_setup DESC, horodatage"
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "filterable": true
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Statut"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "ok": {
+                        "color": "green",
+                        "index": 0
+                      },
+                      "passed": {
+                        "color": "green",
+                        "index": 1
+                      },
+                      "ko": {
+                        "color": "red",
+                        "index": 2
+                      },
+                      "failed": {
+                        "color": "red",
+                        "index": 3
+                      },
+                      "timedOut": {
+                        "color": "red",
+                        "index": 4
+                      },
+                      "incomplet": {
+                        "color": "orange",
+                        "index": 5
+                      },
+                      "interrupted": {
+                        "color": "orange",
+                        "index": 6
+                      },
+                      "non_execute": {
+                        "color": "red",
+                        "text": "non exécuté",
+                        "index": 7
+                      },
+                      "skipped": {
+                        "color": "text",
+                        "index": 8
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Test"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Historique du test",
+                    "targetBlank": false,
+                    "url": "/d/tnr-detail/tnr-detail?var-test=${__value.raw:percentencode}&${app:queryparam}&${env:queryparam}&${machine:queryparam}&${__url_time_range}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Rapport"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Rapport Playwright",
+                    "targetBlank": true,
+                    "url": "${url_rapports}/${__data.fields.lien}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "lien"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "links": [
+    {
+      "title": "Dashboards TNR",
+      "type": "dashboards",
+      "tags": [
+        "tnr"
+      ],
+      "asDropdown": true,
+      "includeVars": true,
+      "keepTime": true
+    }
+  ]
+}

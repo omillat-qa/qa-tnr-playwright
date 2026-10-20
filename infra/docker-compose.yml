@@ -61,6 +61,17 @@ services:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - ./grafana/dashboards:/etc/grafana/dashboards:ro
 
+  rapports:
+    image: nginx:1.27-alpine
+    container_name: tnr-rapports
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    volumes:
+      # Dossier playwright du NAS, monté dans WSL par infra/wsl/montage-nas.service — lecture seule
+      - ${TNR_RAPPORTS:-/mnt/pronas/ACT/Recettes-Qualification/QTP TNR/playwright}:/usr/share/nginx/html:ro
+      - ./rapports/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+
 volumes:
   pgdata:
   grafana-data:

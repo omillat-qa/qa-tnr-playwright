@@ -1,0 +1,23 @@
+# infra/wsl/montage-nas.service
+# Docker dans WSL : monte le partage du NAS en lecture seule avant Docker (service « rapports » d'infra/)
+# L'identité utilisée est celle de la session Windows qui lance WSL.
+#
+# Installation (Ubuntu WSL, root) :
+#   cp infra/wsl/montage-nas.service /etc/systemd/system/
+#   mkdir -p /etc/systemd/system/docker.service.d && cp infra/wsl/docker-apres-nas.conf /etc/systemd/system/docker.service.d/
+#   systemctl daemon-reload && systemctl enable --now montage-nas.service && systemctl restart docker
+
+[Unit]
+Description=Montage du NAS Pronas01 (lecture seule) pour les rapports Playwright
+Before=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStartPre=/bin/mkdir -p /mnt/pronas
+# Barres obliques inversées doublées : échappement des fichiers unit systemd (\\Pronas01\Dsi)
+ExecStart=/bin/sh -c 'mountpoint -q /mnt/pronas || mount -t drvfs "\\\\\\\\Pronas01\\\\Dsi" /mnt/pronas -o ro'
+ExecStop=/bin/umount /mnt/pronas
+
+[Install]
+WantedBy=multi-user.target

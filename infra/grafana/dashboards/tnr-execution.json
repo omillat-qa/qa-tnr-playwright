@@ -47,7 +47,7 @@
           "editorMode": "code",
           "rawQuery": true,
           "format": "table",
-          "rawSql": "SELECT premier_run AS time, app || ' ' || env || ' : version ' || version_app AS text, app AS tags\n    FROM tnr.v_versions\n    WHERE $__timeFilter(premier_run) AND app IN (${app:sqlstring})"
+          "rawSql": "SELECT premier_run AS time,\n           app || ' ' || env || ' : version ' || version_app\n             || coalesce(' (build du ' || to_char(build_app AT TIME ZONE 'Europe/Paris', 'DD/MM/YYYY HH24:MI') || ')', '') AS text,\n           app AS tags\n    FROM tnr.v_versions\n    WHERE $__timeFilter(premier_run) AND app IN (${app:sqlstring})"
         }
       }
     ]
@@ -131,6 +131,17 @@
         },
         "options": [],
         "hide": 0
+      },
+      {
+        "name": "url_rapports",
+        "label": "Serveur des rapports",
+        "type": "constant",
+        "hide": 2,
+        "query": "http://localhost:8081",
+        "current": {
+          "text": "http://localhost:8081",
+          "value": "http://localhost:8081"
+        }
       }
     ]
   },
@@ -612,6 +623,7 @@
       "id": 8,
       "type": "table",
       "title": "Derniers runs",
+      "description": "Clic sur un run → détail de ses tests ; 📊 Rapport → rapport Playwright (runs depuis le 20/10/2026 14:29)",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "tnr-postgres"
@@ -632,7 +644,7 @@
           "editorMode": "code",
           "rawQuery": true,
           "format": "table",
-          "rawSql": "SELECT debut AS \"Début\", app AS \"App\", env AS \"Env\", projet AS \"Projet\", machine AS \"Machine\",\n         statut AS \"Statut\", passes || ' / ' || total AS \"Passés\", echecs AS \"Échecs\", flaky AS \"Flaky\",\n         non_executes AS \"Non joués\", version_app AS \"Version\", commit_git AS \"Commit\",\n         round(duree_tests_ms / 60000.0, 1) AS \"Durée (min)\", run_id AS \"Run\"\n  FROM tnr.v_runs WHERE $__timeFilter(debut) AND app IN (${app:sqlstring}) AND env IN (${env:sqlstring}) AND machine IN (${machine:sqlstring})\n  ORDER BY debut DESC LIMIT 200"
+          "rawSql": "SELECT debut AS \"Début\", app AS \"App\", env AS \"Env\", projet AS \"Projet\", machine AS \"Machine\",\n         statut AS \"Statut\", passes || ' / ' || total AS \"Passés\", echecs AS \"Échecs\", flaky AS \"Flaky\",\n         non_executes AS \"Non joués\", version_app AS \"Version\", commit_git AS \"Commit\",\n         round(duree_tests_ms / 60000.0, 1) AS \"Durée (min)\", run_id AS \"Run\",\n         CASE WHEN rapport_html IS NOT NULL THEN '📊 Rapport' END AS \"Rapport\",\n         rapport_html AS lien\n  FROM tnr.v_runs WHERE $__timeFilter(debut) AND app IN (${app:sqlstring}) AND env IN (${env:sqlstring}) AND machine IN (${machine:sqlstring})\n  ORDER BY debut DESC LIMIT 200"
         }
       ],
       "options": {
@@ -672,22 +684,90 @@
                         "color": "green",
                         "index": 0
                       },
+                      "passed": {
+                        "color": "green",
+                        "index": 1
+                      },
                       "ko": {
                         "color": "red",
-                        "index": 1
+                        "index": 2
+                      },
+                      "failed": {
+                        "color": "red",
+                        "index": 3
+                      },
+                      "timedOut": {
+                        "color": "red",
+                        "index": 4
                       },
                       "incomplet": {
                         "color": "orange",
-                        "index": 2
+                        "index": 5
+                      },
+                      "interrupted": {
+                        "color": "orange",
+                        "index": 6
                       },
                       "non_execute": {
                         "color": "red",
                         "text": "non exécuté",
-                        "index": 3
+                        "index": 7
+                      },
+                      "skipped": {
+                        "color": "text",
+                        "index": 8
                       }
                     }
                   }
                 ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Run"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Détail du run",
+                    "targetBlank": false,
+                    "url": "/d/tnr-detail/tnr-detail?var-run=${__value.raw:percentencode}&${app:queryparam}&${env:queryparam}&${machine:queryparam}&${__url_time_range}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Rapport"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Rapport Playwright",
+                    "targetBlank": true,
+                    "url": "${url_rapports}/${__data.fields.lien}"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "lien"
+            },
+            "properties": [
+              {
+                "id": "custom.hidden",
+                "value": true
               }
             ]
           }
@@ -698,6 +778,7 @@
       "id": 9,
       "type": "table",
       "title": "Tests en échec",
+      "description": "Clic sur un test → son historique",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "tnr-postgres"
@@ -735,14 +816,33 @@
             "filterable": true
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Test"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Historique du test",
+                    "targetBlank": false,
+                    "url": "/d/tnr-detail/tnr-detail?var-test=${__value.raw:percentencode}&${app:queryparam}&${env:queryparam}&${machine:queryparam}&${__url_time_range}"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
       }
     },
     {
       "id": 10,
       "type": "table",
       "title": "Tests instables",
-      "description": "Flaky = passé après retry. Bascule = statut différent du run précédent (même machine, même projet). Seuil : 2 bascules.",
+      "description": "Flaky = passé après retry. Bascule = statut différent du run précédent (même machine, même projet). Seuil : 2 bascules. Clic sur un test → son historique.",
       "datasource": {
         "type": "grafana-postgresql-datasource",
         "uid": "tnr-postgres"
@@ -780,7 +880,26 @@
             "filterable": true
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Test"
+            },
+            "properties": [
+              {
+                "id": "links",
+                "value": [
+                  {
+                    "title": "Historique du test",
+                    "targetBlank": false,
+                    "url": "/d/tnr-detail/tnr-detail?var-test=${__value.raw:percentencode}&${app:queryparam}&${env:queryparam}&${machine:queryparam}&${__url_time_range}"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
       }
     },
     {
