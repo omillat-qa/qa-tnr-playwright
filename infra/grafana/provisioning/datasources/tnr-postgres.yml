@@ -1,0 +1,23 @@
+# infra/grafana/provisioning/datasources/tnr-postgres.yml
+# Datasource PostgreSQL en lecture seule (compte tnr_lecture)
+# uid fixe : référencé par les dashboards versionnés (infra/grafana/dashboards/*.json)
+
+apiVersion: 1
+
+datasources:
+  - name: TNR PostgreSQL
+    uid: tnr-postgres
+    type: grafana-postgresql-datasource
+    access: proxy
+    url: postgres:5432
+    user: tnr_lecture
+    isDefault: true
+    editable: false
+    jsonData:
+      database: tnr
+      sslmode: disable          # trafic interne au réseau docker
+      postgresVersion: 1500     # dernière valeur proposée par Grafana ; compatible PostgreSQL 18
+      timescaledb: false
+      maxOpenConns: 10
+    secureJsonData:
+      password: ${TNR_RO_PASSWORD}

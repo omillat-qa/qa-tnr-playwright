@@ -1,0 +1,18 @@
+# infra/grafana/provisioning/dashboards/tnr.yml
+# Dashboards chargés depuis infra/grafana/dashboards/*.json (versionnés dans git)
+#
+# Modifiables dans l'UI pour la recette (allowUiUpdates) MAIS la référence reste le fichier :
+#   modifier dans Grafana → Partager → Exporter (JSON) → remplacer le fichier → commit.
+# Un changement non exporté est écrasé dès que le fichier JSON change.
+
+apiVersion: 1
+
+providers:
+  - name: tnr
+    folder: TNR Playwright
+    type: file
+    disableDeletion: true
+    allowUiUpdates: true
+    updateIntervalSeconds: 30
+    options:
+      path: /etc/grafana/dashboards

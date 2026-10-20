@@ -1,0 +1,858 @@
+{
+  "uid": "tnr-execution",
+  "title": "TNR — Exécution",
+  "description": "Statuts des runs Playwright, tests en échec et instables (source : tnr.v_runs / tnr.v_tests)",
+  "tags": [
+    "tnr",
+    "playwright"
+  ],
+  "timezone": "browser",
+  "editable": true,
+  "graphTooltip": 1,
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "",
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      },
+      {
+        "name": "Versions déployées",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "tnr-postgres"
+        },
+        "enable": true,
+        "iconColor": "purple",
+        "target": {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT premier_run AS time, app || ' ' || env || ' : version ' || version_app AS text, app AS tags\n    FROM tnr.v_versions\n    WHERE $__timeFilter(premier_run) AND app IN (${app:sqlstring})"
+        }
+      }
+    ]
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "app",
+        "label": "Application",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "tnr-postgres"
+        },
+        "query": "SELECT DISTINCT app FROM tnr.runs ORDER BY 1",
+        "definition": "SELECT DISTINCT app FROM tnr.runs ORDER BY 1",
+        "refresh": 2,
+        "sort": 1,
+        "multi": true,
+        "includeAll": true,
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "options": [],
+        "hide": 0
+      },
+      {
+        "name": "env",
+        "label": "Environnement",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "tnr-postgres"
+        },
+        "query": "SELECT DISTINCT env FROM tnr.runs ORDER BY 1",
+        "definition": "SELECT DISTINCT env FROM tnr.runs ORDER BY 1",
+        "refresh": 2,
+        "sort": 1,
+        "multi": true,
+        "includeAll": true,
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "options": [],
+        "hide": 0
+      },
+      {
+        "name": "machine",
+        "label": "Machine",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "tnr-postgres"
+        },
+        "query": "SELECT DISTINCT machine FROM tnr.runs ORDER BY 1",
+        "definition": "SELECT DISTINCT machine FROM tnr.runs ORDER BY 1",
+        "refresh": 2,
+        "sort": 1,
+        "multi": true,
+        "includeAll": true,
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "options": [],
+        "hide": 0
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Runs",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "tnr-postgres"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT count(DISTINCT (run_id, machine)) AS \"Runs\"\n  FROM tnr.v_runs WHERE $__timeFilter(debut) AND app IN (${app:sqlstring}) AND env IN (${env:sqlstring}) AND machine IN (${machine:sqlstring})"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Réussite",
+      "description": "Tests passés / tests exécutés (hors skip et setup)",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "tnr-postgres"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 4,
+        "y": 0
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT round(100.0 * sum(passes) / nullif(sum(total), 0), 1) AS \"Réussite\"\n  FROM tnr.v_runs WHERE $__timeFilter(debut) AND app IN (${app:sqlstring}) AND env IN (${env:sqlstring}) AND machine IN (${machine:sqlstring})"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "decimals": 1,
+          "color": {
+            "mode": "thresholds",
+            "fixedColor": "blue"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 90
+              },
+              {
+                "color": "green",
+                "value": 98
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Échecs",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "tnr-postgres"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 9,
+        "y": 0
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT coalesce(sum(echecs), 0) AS \"Échecs\"\n  FROM tnr.v_runs WHERE $__timeFilter(debut) AND app IN (${app:sqlstring}) AND env IN (${env:sqlstring}) AND machine IN (${machine:sqlstring})"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "color": {
+            "mode": "thresholds",
+            "fixedColor": "blue"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Flaky",
+      "description": "Tests passés après au moins un retry",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "tnr-postgres"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 14,
+        "y": 0
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT coalesce(sum(flaky), 0) AS \"Flaky\"\n  FROM tnr.v_runs WHERE $__timeFilter(debut) AND app IN (${app:sqlstring}) AND env IN (${env:sqlstring}) AND machine IN (${machine:sqlstring})"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "color": {
+            "mode": "thresholds",
+            "fixedColor": "blue"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Projets non OK",
+      "description": "Projets ko, incomplets (tests non joués) ou non exécutés (setup KO)",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "tnr-postgres"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 19,
+        "y": 0
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT count(*) FILTER (WHERE statut IN ('ko', 'incomplet', 'non_execute')) AS \"Projets non OK\"\n  FROM tnr.v_runs WHERE $__timeFilter(debut) AND app IN (${app:sqlstring}) AND env IN (${env:sqlstring}) AND machine IN (${machine:sqlstring})"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "color": {
+            "mode": "thresholds",
+            "fixedColor": "blue"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Réussite par jour",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "tnr-postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "time_series",
+          "rawSql": "SELECT $__timeGroupAlias(debut, 1d), app AS metric,\n         round(100.0 * sum(passes) / nullif(sum(total), 0), 1) AS value\n  FROM tnr.v_runs WHERE $__timeFilter(debut) AND app IN (${app:sqlstring}) AND env IN (${env:sqlstring}) AND machine IN (${machine:sqlstring})\n  GROUP BY 1, 2 ORDER BY 1"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "lastNotNull",
+            "mean"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 0,
+            "showPoints": "always",
+            "pointSize": 6,
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none"
+            }
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Échecs et flaky par jour",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "tnr-postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "time_series",
+          "rawSql": "SELECT $__timeGroupAlias(debut, 1d), sum(echecs) AS \"Échecs\", sum(flaky) AS \"Flaky\"\n  FROM tnr.v_runs WHERE $__timeFilter(debut) AND app IN (${app:sqlstring}) AND env IN (${env:sqlstring}) AND machine IN (${machine:sqlstring})\n  GROUP BY 1 ORDER BY 1"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "sum"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "none",
+          "min": 0,
+          "custom": {
+            "drawStyle": "bars",
+            "lineWidth": 2,
+            "fillOpacity": 80,
+            "showPoints": "auto",
+            "pointSize": 6,
+            "spanNulls": true,
+            "stacking": {
+              "mode": "normal"
+            }
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Échecs"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "red"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Flaky"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "mode": "fixed",
+                  "fixedColor": "orange"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 8,
+      "type": "table",
+      "title": "Derniers runs",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "tnr-postgres"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 12
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT debut AS \"Début\", app AS \"App\", env AS \"Env\", projet AS \"Projet\", machine AS \"Machine\",\n         statut AS \"Statut\", passes || ' / ' || total AS \"Passés\", echecs AS \"Échecs\", flaky AS \"Flaky\",\n         non_executes AS \"Non joués\", version_app AS \"Version\", commit_git AS \"Commit\",\n         round(duree_tests_ms / 60000.0, 1) AS \"Durée (min)\", run_id AS \"Run\"\n  FROM tnr.v_runs WHERE $__timeFilter(debut) AND app IN (${app:sqlstring}) AND env IN (${env:sqlstring}) AND machine IN (${machine:sqlstring})\n  ORDER BY debut DESC LIMIT 200"
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "filterable": true
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Statut"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "type": "value",
+                    "options": {
+                      "ok": {
+                        "color": "green",
+                        "index": 0
+                      },
+                      "ko": {
+                        "color": "red",
+                        "index": 1
+                      },
+                      "incomplet": {
+                        "color": "orange",
+                        "index": 2
+                      },
+                      "non_execute": {
+                        "color": "red",
+                        "text": "non exécuté",
+                        "index": 3
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "type": "table",
+      "title": "Tests en échec",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "tnr-postgres"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 22
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT cle_test AS \"Test\", module AS \"Module\", app AS \"App\",\n         count(*) FILTER (WHERE est_echec) AS \"Échecs\", count(*) AS \"Exécutions\",\n         round(100.0 * count(*) FILTER (WHERE est_echec) / count(*), 1) AS \"% échec\",\n         max(horodatage) FILTER (WHERE est_echec) AS \"Dernier échec\",\n         left((array_agg(erreur ORDER BY horodatage DESC) FILTER (WHERE est_echec))[1], 200) AS \"Dernière erreur\"\n  FROM tnr.v_tests\n  WHERE $__timeFilter(horodatage) AND app IN (${app:sqlstring}) AND env IN (${env:sqlstring}) AND machine IN (${machine:sqlstring}) AND NOT est_setup AND statut <> 'skipped'\n  GROUP BY 1, 2, 3 HAVING count(*) FILTER (WHERE est_echec) > 0\n  ORDER BY 4 DESC, 7 DESC LIMIT 50"
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "filterable": true
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 10,
+      "type": "table",
+      "title": "Tests instables",
+      "description": "Flaky = passé après retry. Bascule = statut différent du run précédent (même machine, même projet). Seuil : 2 bascules.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "tnr-postgres"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 32
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "WITH t AS (\n    SELECT cle_test, module, app, est_echec, est_flaky,\n           lag(est_echec) OVER (PARTITION BY machine, projet, cle_test ORDER BY horodatage) AS echec_precedent\n    FROM tnr.v_tests\n    WHERE $__timeFilter(horodatage) AND app IN (${app:sqlstring}) AND env IN (${env:sqlstring}) AND machine IN (${machine:sqlstring}) AND NOT est_setup AND statut <> 'skipped'\n  )\n  SELECT cle_test AS \"Test\", module AS \"Module\", app AS \"App\", count(*) AS \"Exécutions\",\n         count(*) FILTER (WHERE est_flaky) AS \"Flaky (retry)\",\n         count(*) FILTER (WHERE est_echec <> echec_precedent) AS \"Bascules OK/KO\"\n  FROM t GROUP BY 1, 2, 3\n  HAVING count(*) FILTER (WHERE est_flaky) > 0 OR count(*) FILTER (WHERE est_echec <> echec_precedent) >= 2\n  ORDER BY 6 DESC, 5 DESC LIMIT 50"
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "filterable": true
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Durée des campagnes",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "tnr-postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 41
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "time_series",
+          "rawSql": "SELECT debut AS time, projet AS metric, round(duree_tests_ms / 60000.0, 1) AS value\n  FROM tnr.v_runs WHERE $__timeFilter(debut) AND app IN (${app:sqlstring}) AND env IN (${env:sqlstring}) AND machine IN (${machine:sqlstring})\n  ORDER BY 1"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "lastNotNull",
+            "mean"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "m",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 0,
+            "showPoints": "always",
+            "pointSize": 6,
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none"
+            }
+          }
+        },
+        "overrides": []
+      }
+    }
+  ],
+  "links": [
+    {
+      "title": "Dashboards TNR",
+      "type": "dashboards",
+      "tags": [
+        "tnr"
+      ],
+      "asDropdown": true,
+      "includeVars": true,
+      "keepTime": true
+    }
+  ]
+}

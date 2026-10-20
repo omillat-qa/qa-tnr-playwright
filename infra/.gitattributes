@@ -1,0 +1,5 @@
+# Fichiers montés dans les conteneurs Linux : fins de ligne LF même sur un clone Windows (core.autocrlf)
+*.sql  text eol=lf
+*.sh   text eol=lf
+*.yml  text eol=lf
+*.json text eol=lf

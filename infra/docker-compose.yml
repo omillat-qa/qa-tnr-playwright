@@ -1,0 +1,66 @@
+# infra/docker-compose.yml
+# Recette PostgreSQL + Grafana pour les runs TNR / perf (VM devqtp04.int.dns)
+#
+#   cd infra
+#   copy .env.exemple .env      → renseigner les mots de passe (.env n'est jamais commité)
+#   docker compose up -d
+#
+# PostgreSQL : port 5432 (import depuis les VM de test, compte tnr_ecriture)
+# Grafana    : http://devqtp04.int.dns:3000 (datasource en lecture seule, compte tnr_lecture)
+
+name: tnr-observabilite
+
+services:
+
+  postgres:
+    image: postgres:18          # majeure figée, mineures (correctifs) suivies au pull
+    container_name: tnr-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD à définir dans infra/.env}
+      POSTGRES_DB: tnr
+      # Lus par postgres/init/01-tnr.sql au premier démarrage (base vide) uniquement
+      TNR_RW_PASSWORD: ${TNR_RW_PASSWORD:?TNR_RW_PASSWORD à définir dans infra/.env}
+      TNR_RO_PASSWORD: ${TNR_RO_PASSWORD:?TNR_RO_PASSWORD à définir dans infra/.env}
+      TZ: Europe/Paris
+    ports:
+      - "5432:5432"
+    volumes:
+      # PostgreSQL 18 : PGDATA = /var/lib/postgresql/18/docker → on monte le dossier parent
+      # (monter /var/lib/postgresql/data comme en 17 fait échouer le démarrage)
+      - pgdata:/var/lib/postgresql
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+      - ../shared/db:/tnr-db:ro          # schema.sql + vues.sql (source unique, versionnée)
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d tnr"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  grafana:
+    image: grafana/grafana:12.2.0
+    container_name: tnr-grafana
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_ADMIN_PASSWORD:?GF_ADMIN_PASSWORD à définir dans infra/.env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_DATE_FORMATS_DEFAULT_TIMEZONE: Europe/Paris
+      GF_SERVER_ROOT_URL: http://devqtp04.int.dns:3000
+      # Lu par provisioning/datasources/tnr-postgres.yml
+      TNR_RO_PASSWORD: ${TNR_RO_PASSWORD}
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/etc/grafana/dashboards:ro
+
+volumes:
+  pgdata:
+  grafana-data:

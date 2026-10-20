@@ -1,0 +1,979 @@
+{
+  "uid": "tnr-temps-reponse",
+  "title": "Temps de réponse",
+  "description": "Perf recherche (UX / POST par mot-clé) et temps de chargement mesurés pendant les TNR, par version applicative",
+  "tags": [
+    "tnr",
+    "playwright"
+  ],
+  "timezone": "browser",
+  "editable": true,
+  "graphTooltip": 1,
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "",
+  "time": {
+    "from": "now-30d",
+    "to": "now"
+  },
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      },
+      {
+        "name": "Versions déployées",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "tnr-postgres"
+        },
+        "enable": true,
+        "iconColor": "purple",
+        "target": {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT premier_run AS time, app || ' ' || env || ' : version ' || version_app AS text, app AS tags\n    FROM tnr.v_versions\n    WHERE $__timeFilter(premier_run) AND app IN (${app:sqlstring})"
+        }
+      }
+    ]
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "app",
+        "label": "Application",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "tnr-postgres"
+        },
+        "query": "SELECT DISTINCT app FROM tnr.mesures ORDER BY 1",
+        "definition": "SELECT DISTINCT app FROM tnr.mesures ORDER BY 1",
+        "refresh": 2,
+        "sort": 1,
+        "multi": false,
+        "includeAll": false,
+        "current": {},
+        "options": [],
+        "hide": 0
+      },
+      {
+        "name": "env",
+        "label": "Environnement",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "tnr-postgres"
+        },
+        "query": "SELECT DISTINCT env FROM tnr.mesures ORDER BY 1",
+        "definition": "SELECT DISTINCT env FROM tnr.mesures ORDER BY 1",
+        "refresh": 2,
+        "sort": 1,
+        "multi": false,
+        "includeAll": false,
+        "current": {},
+        "options": [],
+        "hide": 0
+      },
+      {
+        "name": "machine",
+        "label": "Machine",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "tnr-postgres"
+        },
+        "query": "SELECT DISTINCT machine FROM tnr.mesures ORDER BY 1",
+        "definition": "SELECT DISTINCT machine FROM tnr.mesures ORDER BY 1",
+        "refresh": 2,
+        "sort": 1,
+        "multi": true,
+        "includeAll": true,
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "options": [],
+        "hide": 0
+      },
+      {
+        "name": "motcle",
+        "label": "Mot-clé",
+        "type": "query",
+        "datasource": {
+          "type": "grafana-postgresql-datasource",
+          "uid": "tnr-postgres"
+        },
+        "query": "SELECT DISTINCT motcle FROM tnr.mesures WHERE motcle IS NOT NULL AND app = ${app:sqlstring} ORDER BY 1",
+        "definition": "SELECT DISTINCT motcle FROM tnr.mesures WHERE motcle IS NOT NULL AND app = ${app:sqlstring} ORDER BY 1",
+        "refresh": 2,
+        "sort": 1,
+        "multi": true,
+        "includeAll": true,
+        "current": {
+          "selected": true,
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "options": [],
+        "hide": 0
+      },
+      {
+        "name": "min_mesures",
+        "label": "Mesures min. par run",
+        "type": "custom",
+        "query": "1,10,50",
+        "hide": 0,
+        "multi": false,
+        "includeAll": false,
+        "description": "Écarte les runs de vérification (quelques mots-clés) des agrégats",
+        "current": {
+          "selected": true,
+          "text": "10",
+          "value": "10"
+        },
+        "options": [
+          {
+            "selected": false,
+            "text": "1",
+            "value": "1"
+          },
+          {
+            "selected": true,
+            "text": "10",
+            "value": "10"
+          },
+          {
+            "selected": false,
+            "text": "50",
+            "value": "50"
+          }
+        ]
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "Perf recherche",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "panels": []
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "UX p50",
+      "description": "Temps perçu : saisie → résultats affichés",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "tnr-postgres"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 0,
+        "y": 1
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT round(percentile_cont(0.5) WITHIN GROUP (ORDER BY temps_ux_ms)) AS \"UX p50\"\n  FROM tnr.v_mesures_perf WHERE $__timeFilter(horodatage) AND app = ${app:sqlstring} AND env = ${env:sqlstring} AND machine IN (${machine:sqlstring}) AND motcle IN (${motcle:sqlstring}) AND nb_mesures_run >= $min_mesures"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "UX p95",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "tnr-postgres"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 5,
+        "y": 1
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT round(percentile_cont(0.95) WITHIN GROUP (ORDER BY temps_ux_ms)) AS \"UX p95\"\n  FROM tnr.v_mesures_perf WHERE $__timeFilter(horodatage) AND app = ${app:sqlstring} AND env = ${env:sqlstring} AND machine IN (${machine:sqlstring}) AND motcle IN (${motcle:sqlstring}) AND nb_mesures_run >= $min_mesures"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "POST p50",
+      "description": "Requête de recherche côté serveur",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "tnr-postgres"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 10,
+        "y": 1
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT round(percentile_cont(0.5) WITHIN GROUP (ORDER BY temps_post_ms)) AS \"POST p50\"\n  FROM tnr.v_mesures_perf WHERE $__timeFilter(horodatage) AND app = ${app:sqlstring} AND env = ${env:sqlstring} AND machine IN (${machine:sqlstring}) AND motcle IN (${motcle:sqlstring}) AND nb_mesures_run >= $min_mesures"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Part serveur",
+      "description": "POST / UX : proche de 100 % = le temps est passé côté serveur",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "tnr-postgres"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 15,
+        "y": 1
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT round(100.0 * sum(temps_post_ms) / nullif(sum(temps_ux_ms), 0)) AS \"Part serveur\"\n  FROM tnr.v_mesures_perf WHERE $__timeFilter(horodatage) AND app = ${app:sqlstring} AND env = ${env:sqlstring} AND machine IN (${machine:sqlstring}) AND motcle IN (${motcle:sqlstring}) AND nb_mesures_run >= $min_mesures"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "blue",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Dérive vs version précédente",
+      "description": "Médiane, sur les mots-clés communs, de l'écart UX p50 entre les 2 dernières versions (toute la période)",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "tnr-postgres"
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 5,
+        "x": 19,
+        "y": 1
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "WITH versions AS (\n    SELECT version_app, row_number() OVER (ORDER BY min(horodatage) DESC) AS rang\n    FROM tnr.v_mesures_perf WHERE app = ${app:sqlstring} AND env = ${env:sqlstring} AND machine IN (${machine:sqlstring}) AND motcle IN (${motcle:sqlstring}) AND nb_mesures_run >= $min_mesures AND version_app IS NOT NULL\n    GROUP BY version_app\n  ), med AS (\n    SELECT v.rang, m.version_app, m.motcle, percentile_cont(0.5) WITHIN GROUP (ORDER BY m.temps_ux_ms) AS ux\n    FROM tnr.v_mesures_perf m JOIN versions v USING (version_app)\n    WHERE app = ${app:sqlstring} AND env = ${env:sqlstring} AND machine IN (${machine:sqlstring}) AND motcle IN (${motcle:sqlstring}) AND nb_mesures_run >= $min_mesures AND v.rang <= 2\n    GROUP BY 1, 2, 3\n  ), comp AS (\n    SELECT a.motcle, b.version_app AS v_prec, a.version_app AS v_act, b.ux AS ux_prec, a.ux AS ux_act\n    FROM med a JOIN med b ON a.motcle = b.motcle AND a.rang = 1 AND b.rang = 2\n  )\n  SELECT round((100 * (percentile_cont(0.5) WITHIN GROUP (ORDER BY ux_act / ux_prec) - 1))::numeric) AS \"Dérive\"\n  FROM comp"
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "center"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "color": {
+            "mode": "thresholds",
+            "fixedColor": "blue"
+          },
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 10
+              },
+              {
+                "color": "red",
+                "value": 25
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 7,
+      "type": "timeseries",
+      "title": "Temps par run",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "tnr-postgres"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 5
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "time_series",
+          "rawSql": "SELECT min(horodatage) AS time,\n         round(percentile_cont(0.5)  WITHIN GROUP (ORDER BY temps_ux_ms))   AS \"UX p50\",\n         round(percentile_cont(0.95) WITHIN GROUP (ORDER BY temps_ux_ms))   AS \"UX p95\",\n         round(percentile_cont(0.5)  WITHIN GROUP (ORDER BY temps_post_ms)) AS \"POST p50\"\n  FROM tnr.v_mesures_perf WHERE $__timeFilter(horodatage) AND app = ${app:sqlstring} AND env = ${env:sqlstring} AND machine IN (${machine:sqlstring}) AND motcle IN (${motcle:sqlstring}) AND nb_mesures_run >= $min_mesures\n  GROUP BY run_id, machine ORDER BY 1"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "lastNotNull",
+            "mean"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 0,
+            "showPoints": "always",
+            "pointSize": 6,
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none"
+            }
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 8,
+      "type": "timeseries",
+      "title": "UX par mot-clé",
+      "description": "Choisir quelques mots-clés dans la variable pour une lecture confortable",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "tnr-postgres"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 14
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "time_series",
+          "rawSql": "SELECT horodatage AS time, motcle AS metric, temps_ux_ms AS value\n  FROM tnr.v_mesures_perf WHERE $__timeFilter(horodatage) AND app = ${app:sqlstring} AND env = ${env:sqlstring} AND machine IN (${machine:sqlstring}) AND motcle IN (${motcle:sqlstring}) AND nb_mesures_run >= $min_mesures\n  ORDER BY 1"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "lastNotNull",
+            "mean"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 0,
+            "showPoints": "always",
+            "pointSize": 6,
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none"
+            }
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 9,
+      "type": "table",
+      "title": "Par version",
+      "description": "Version « inconnue » : runs antérieurs à la lecture de la version (19/10/2026)",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "tnr-postgres"
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 24,
+        "x": 0,
+        "y": 23
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT coalesce(version_app, 'inconnue') AS \"Version\", min(build_app) AS \"Build\",\n         count(DISTINCT run_id) AS \"Runs\", count(*) AS \"Mesures\",\n         round(percentile_cont(0.5)  WITHIN GROUP (ORDER BY temps_ux_ms))   AS \"UX p50\",\n         round(percentile_cont(0.95) WITHIN GROUP (ORDER BY temps_ux_ms))   AS \"UX p95\",\n         max(temps_ux_ms) AS \"UX max\",\n         round(percentile_cont(0.5)  WITHIN GROUP (ORDER BY temps_post_ms)) AS \"POST p50\",\n         round(percentile_cont(0.95) WITHIN GROUP (ORDER BY temps_post_ms)) AS \"POST p95\",\n         min(horodatage) AS \"Première mesure\", max(horodatage) AS \"Dernière mesure\"\n  FROM tnr.v_mesures_perf WHERE $__timeFilter(horodatage) AND app = ${app:sqlstring} AND env = ${env:sqlstring} AND machine IN (${machine:sqlstring}) AND motcle IN (${motcle:sqlstring}) AND nb_mesures_run >= $min_mesures\n  GROUP BY version_app ORDER BY min(horodatage) DESC"
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "filterable": true
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UX p50"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "ms"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UX p95"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "ms"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "UX max"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "ms"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "POST p50"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "ms"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "POST p95"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "ms"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "type": "table",
+      "title": "Dérive par mot-clé (2 dernières versions)",
+      "description": "Toute la période disponible ; mots-clés mesurés dans les 2 versions uniquement",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "tnr-postgres"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 24,
+        "x": 0,
+        "y": 30
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "WITH versions AS (\n    SELECT version_app, row_number() OVER (ORDER BY min(horodatage) DESC) AS rang\n    FROM tnr.v_mesures_perf WHERE app = ${app:sqlstring} AND env = ${env:sqlstring} AND machine IN (${machine:sqlstring}) AND motcle IN (${motcle:sqlstring}) AND nb_mesures_run >= $min_mesures AND version_app IS NOT NULL\n    GROUP BY version_app\n  ), med AS (\n    SELECT v.rang, m.version_app, m.motcle, percentile_cont(0.5) WITHIN GROUP (ORDER BY m.temps_ux_ms) AS ux\n    FROM tnr.v_mesures_perf m JOIN versions v USING (version_app)\n    WHERE app = ${app:sqlstring} AND env = ${env:sqlstring} AND machine IN (${machine:sqlstring}) AND motcle IN (${motcle:sqlstring}) AND nb_mesures_run >= $min_mesures AND v.rang <= 2\n    GROUP BY 1, 2, 3\n  ), comp AS (\n    SELECT a.motcle, b.version_app AS v_prec, a.version_app AS v_act, b.ux AS ux_prec, a.ux AS ux_act\n    FROM med a JOIN med b ON a.motcle = b.motcle AND a.rang = 1 AND b.rang = 2\n  )\n  SELECT motcle AS \"Mot-clé\", v_prec AS \"Version précédente\", round(ux_prec::numeric) AS \"UX p50 avant\",\n         v_act AS \"Version actuelle\", round(ux_act::numeric) AS \"UX p50 après\",\n         round((100 * (ux_act / ux_prec - 1))::numeric) AS \"Dérive %\"\n  FROM comp ORDER BY 6 DESC"
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "filterable": true
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Dérive %"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "color-background"
+                }
+              },
+              {
+                "id": "thresholds",
+                "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {
+                      "color": "green",
+                      "value": null
+                    },
+                    {
+                      "color": "orange",
+                      "value": 10
+                    },
+                    {
+                      "color": "red",
+                      "value": 25
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 11,
+      "type": "row",
+      "title": "Chargements pendant les TNR",
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 40
+      },
+      "panels": []
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "Chargement p50 par run",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "tnr-postgres"
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 41
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "time_series",
+          "rawSql": "SELECT min(horodatage) AS time, nom AS metric, round(percentile_cont(0.5) WITHIN GROUP (ORDER BY duree_ms)) AS value\n  FROM tnr.v_mesures_chargement WHERE $__timeFilter(horodatage) AND app = ${app:sqlstring} AND env = ${env:sqlstring} AND machine IN (${machine:sqlstring})\n  GROUP BY run_id, machine, nom ORDER BY 1"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "lastNotNull",
+            "mean"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "ms",
+          "min": 0,
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 2,
+            "fillOpacity": 0,
+            "showPoints": "always",
+            "pointSize": 6,
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none"
+            }
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 13,
+      "type": "table",
+      "title": "Chargements par version",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "tnr-postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 50
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT nom AS \"Mesure\", coalesce(version_app, 'inconnue') AS \"Version\", count(*) AS \"Mesures\",\n         round(percentile_cont(0.5)  WITHIN GROUP (ORDER BY duree_ms)) AS \"p50\",\n         round(percentile_cont(0.95) WITHIN GROUP (ORDER BY duree_ms)) AS \"p95\",\n         max(duree_ms) AS \"max\", min(horodatage) AS \"Première mesure\"\n  FROM tnr.v_mesures_chargement WHERE $__timeFilter(horodatage) AND app = ${app:sqlstring} AND env = ${env:sqlstring} AND machine IN (${machine:sqlstring})\n  GROUP BY nom, version_app ORDER BY nom, min(horodatage) DESC"
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm",
+        "footer": {
+          "show": false
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "filterable": true
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p50"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "ms"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "p95"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "ms"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "max"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "ms"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "links": [
+    {
+      "title": "Dashboards TNR",
+      "type": "dashboards",
+      "tags": [
+        "tnr"
+      ],
+      "asDropdown": true,
+      "includeVars": true,
+      "keepTime": true
+    }
+  ]
+}
