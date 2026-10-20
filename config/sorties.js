@@ -49,4 +49,12 @@ function dossierRun() {
   return path.join(OUTPUT_DIR, 'runs', process.env.TNR_RUN_ID);
 }
 
-module.exports = { OUTPUT_DIR, dossierRun };
+// Chemin du rapport HTML relatif à TNR_SORTIES → lien http://<serveur>:8081/<chemin> (service rapports d'infra/)
+// null si le run est tombé en repli local (rapport non partagé)
+function rapportRelatif(runDir) {
+  const racine = process.env.TNR_SORTIES;
+  if (!racine || OUTPUT_DIR === LOCAL) return null;
+  return path.relative(racine, path.join(runDir, 'rapport-html', 'index.html')).split(path.sep).join('/');
+}
+
+module.exports = { OUTPUT_DIR, dossierRun, rapportRelatif };

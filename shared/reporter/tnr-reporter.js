@@ -25,7 +25,7 @@ const os   = require('os');
 const { execSync } = require('child_process');
 const { lireVersionAppHttp } = require('../utils/version-app');
 
-const { OUTPUT_DIR, dossierRun } = require('../../config/sorties');
+const { OUTPUT_DIR, dossierRun, rapportRelatif } = require('../../config/sorties');
 const DATA_DIR   = path.join(OUTPUT_DIR, 'data');
 
 // `--list` : Playwright appelle onBegin/onEnd sans rien exécuter → rien à archiver
@@ -117,6 +117,7 @@ class TnrReporter {
       id:        idFonctionnel,
       motcle:    motcleMatch ? motcleMatch[1] : null,
       titre:     test.title,
+      pw_id:     test.id,   // id Playwright → lien direct vers le test dans le rapport (index.html#?testId=…)
       module,
       projet:    nomProjet,
       app:       metadata.app     || 'inconnue',
@@ -365,6 +366,7 @@ class TnrReporter {
           run_id:   runId,
           machine:    MACHINE,
           commit_git: COMMIT_GIT,
+          rapport_html: rapportRelatif(this.runDir),   // ex. c21015/test-output/runs/run-…/rapport-html/index.html
           debut:    output.run.debut,
           fin:      output.run.fin,
           projet:   nom,

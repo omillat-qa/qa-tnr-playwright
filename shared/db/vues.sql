@@ -19,7 +19,8 @@ SELECT
   total, passes, echecs, skips, flaky, prevus, non_executes, duree_tests_ms,
   version_app, build_app, commit_git,
   CASE WHEN total > 0 THEN round(100.0 * passes / total, 1) END AS taux_reussite,
-  projet LIKE 'perf-%'                                          AS est_perf
+  projet LIKE 'perf-%'                                          AS est_perf,
+  brut->>'rapport_html'                                         AS rapport_html   -- null : run sans rapport archivé
 FROM tnr.runs;
 
 -- ---------------------------------------------------------------------------
@@ -39,7 +40,9 @@ SELECT
   t.statut = 'passed' AND t.tentative > 0                                 AS est_flaky,
   t.projet LIKE 'setup-%'                                                 AS est_setup,
   coalesce(r.version_app, t.version_app)                                  AS version_app,
-  r.commit_git
+  r.commit_git,
+  r.brut->>'rapport_html'                                                 AS rapport_html,
+  t.brut->>'pw_id'                                                        AS pw_id   -- runs à partir du 21/10
 FROM tnr.tests t
 LEFT JOIN tnr.runs r USING (run_id, machine, projet);
 
