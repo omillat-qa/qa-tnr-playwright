@@ -23,11 +23,11 @@ setup('authentification Ellipro Risk', async ({ page, baseURL }, testInfo) => {
 
   const SESSION_FILE = path.resolve(__dirname, `../../../.auth/ellipro-risk-${env.toLowerCase()}.json`);
 
-  await acceptAnyCookieBanner(page);
   await openLoginForm(page, baseURL);
   await submitCredentials(page, { username, password });
 
   await page.waitForURL('**/AppEllipro/navigation/**', { timeout: 15000 });
+  await acceptAnyCookieBanner(page);   // consentement enregistré dans la session → plus de bandeau dans les tests
 
   // Version applicative (meta generator) → version_app / build_app dans data/*.jsonl
   await annoterVersionApp(page, testInfo);

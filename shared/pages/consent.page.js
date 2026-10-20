@@ -8,28 +8,20 @@
  * Silencieux si aucun bandeau n'est présent.
  * @param {import('@playwright/test').Page} page
  */
-async function acceptAnyCookieBanner(page) {
-  const selectors = [
-    '#acceptCookiesBtn',
-    '#qcCmpButtons #acceptCookiesBtn',
-    '#qcCmpUi button#acceptCookiesBtn',
-    'button:has-text("J\'ACCEPTE")',   // Compliance for Business (majuscules)
-    'button:has-text("J\'accepte")',
-    'button:has-text("Accepter")',
-    'button:has-text("Accept")',
-  ];
-
-  for (const sel of selectors) {
-    try {
-      const el = page.locator(sel).first();
-      if (await el.isVisible({ timeout: 2000 }).catch(() => false)) {
-        await el.click({ timeout: 3000 }).catch(() => {});
-        await page.waitForTimeout(500);
-        break;
-      }
-    } catch {
-      // Silencieux — pas de bandeau = normal
-    }
+async function acceptAnyCookieBanner(page, { timeout = 5000 } = {}) {
+  // Le bandeau s'affiche souvent après une redirection (Keycloak → app) : on attend son apparition.
+  // isVisible() n'attend pas (son option timeout est ignorée) → waitFor sur un locator combiné.
+  const bouton = page.getByTestId('acceptCookiesBtn')
+    .or(page.locator('#acceptCookiesBtn'))
+    .or(page.getByRole('button', { name: /^\s*(j['’]accepte|accepter|accept)\s*$/i }))
+    .first();
+  try {
+    await bouton.waitFor({ state: 'visible', timeout });
+    await bouton.click({ timeout: 3000 });
+    await page.waitForTimeout(500);
+    return true;
+  } catch {
+    return false;   // pas de bandeau = normal
   }
 }
 
