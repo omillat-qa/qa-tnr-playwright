@@ -33,6 +33,7 @@
   "devDependencies": {
     "@playwright/test": "^1.53.2",
     "dotenv": "^17.2.3",
-    "nodemailer": "^6.9.16"
+    "nodemailer": "^6.9.16",
+    "pg": "^8.23.1"
   }
 }
