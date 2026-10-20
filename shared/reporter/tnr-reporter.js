@@ -21,6 +21,7 @@ const fs   = require('fs');
 const path = require('path');
 const os   = require('os');
 const { execSync } = require('child_process');
+const { lireVersionAppHttp } = require('../utils/version-app');
 
 const OUTPUT_DIR = path.resolve(__dirname, '../../test-output');
 const RUNS_DIR   = path.join(OUTPUT_DIR, 'runs');
@@ -79,6 +80,8 @@ class TnrReporter {
         prevus:      s.allTests().length,
         metadata:    projet.metadata || {},
         dependances: projet.dependencies || [],
+        baseURL:     projet.use?.baseURL || null,
+        ignoreHTTPSErrors: projet.use?.ignoreHTTPSErrors ?? true,
       };
     }
 
@@ -160,7 +163,7 @@ class TnrReporter {
     }
   }
 
-  onEnd(result) {
+  async onEnd(result) {
     const dureeRun = Date.now() - this.runDebut;
 
     // --list : aucun run réel → pas d'archive (sinon dossier vide pris pour « le dernier run »).
@@ -180,6 +183,9 @@ class TnrReporter {
     const echecs = testsComptables.filter(r => r.statut === 'failed' || r.statut === 'timedOut').length;
     const skips  = this.resultats.filter(r => r.statut === 'skipped' && r.module !== 'Setup').length;
 
+    // Version applicative par projet : setup (navigateur) sinon HTTP (projets sans setup)
+    const versions = await this._versionsParProjet();
+
     // recap_projets — un résumé par projet non-setup
     const recap_projets = Object.entries(this.projetsMap).map(([projet, data]) => ({
       projet,
@@ -187,6 +193,8 @@ class TnrReporter {
       passes:  data.passes,
       echecs:  data.echecs,
       skips:   data.skips,
+      version_app: versions[projet]?.version_app || null,
+      build_app:   versions[projet]?.build_app   || null,
     }));
 
     const output = {
@@ -310,6 +318,22 @@ class TnrReporter {
   // Une ligne JSON horodatée par événement : source unique pour Grafana / Prometheus / Excel
   // ---------------------------------------------------------------------------
 
+  async _versionsParProjet() {
+    const versions = {};
+    const parUrl   = {};   // une seule requête HTTP par URL (5 navigateurs = même app)
+    for (const [nom, prevu] of Object.entries(this.projetsPrevus)) {
+      if (nom.startsWith('setup-')) continue;
+      const sources = this.resultats.filter(t => t.projet === nom || prevu.dependances.includes(t.projet));
+      const lue = [...sources].reverse().find(t => t.version_app);
+      if (lue) { versions[nom] = { version_app: lue.version_app, build_app: lue.build_app }; continue; }
+      if (!prevu.baseURL || !this.resultats.some(t => t.projet === nom)) continue;
+      parUrl[prevu.baseURL] ??= lireVersionAppHttp(prevu.baseURL, { ignoreHTTPSErrors: prevu.ignoreHTTPSErrors });
+      const v = await parUrl[prevu.baseURL];
+      if (v) versions[nom] = { version_app: v.version, build_app: v.build };
+    }
+    return versions;
+  }
+
   _exporterDonnees(output, metricsRun) {
     try {
       const runId = output.run.id;
@@ -339,10 +363,8 @@ class TnrReporter {
           : nonExecutes > 0               ? 'incomplet'
           :                                 'ok';
 
-        // Version : lue par le setup dont dépend le projet (une lecture par run),
-        // sinon par les tests eux-mêmes (projets sans setup)
-        const sources  = [...tests, ...output.tests.filter(t => prevu.dependances.includes(t.projet))];
-        const versionT = [...sources].reverse().find(t => t.version_app) || {};
+        // Version : calculée dans le récap projet (setup, sinon lecture HTTP)
+        const versionT = recapParProjet[nom] || {};
 
         return {
           run_id:   runId,

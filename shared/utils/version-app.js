@@ -39,4 +39,24 @@ async function annoterVersionApp(page, testInfo) {
   if (v.build) testInfo.annotations.push({ type: 'build_app', description: v.build });
 }
 
-module.exports = { lireVersionApp, annoterVersionApp };
+/**
+ * Lit la version par HTTP, sans navigateur ni session : la page d'accueil des apps est publique.
+ * Sert aux projets sans setup (ex. TNR Ellipro, qui ne testent que la page de login Keycloak).
+ * @param {string} url
+ * @returns {Promise<{ version: string, build: string|null }|null>}
+ */
+async function lireVersionAppHttp(url, { ignoreHTTPSErrors = true } = {}) {
+  const { request } = require('@playwright/test');
+  const ctx = await request.newContext({ ignoreHTTPSErrors });
+  try {
+    const html  = await (await ctx.get(url, { timeout: 10000 })).text();
+    const match = html.match(/<meta\s+name="generator"\s+content="[^"]*?(\d+(?:\.\d+)+)(?:\s+(\d{4}-\d{2}-\d{2}T[^"\s]+))?/i);
+    return match ? { version: match[1], build: match[2] || null } : null;
+  } catch {
+    return null;   // app injoignable : le run n'est pas bloqué
+  } finally {
+    await ctx.dispose();
+  }
+}
+
+module.exports = { lireVersionApp, annoterVersionApp, lireVersionAppHttp };

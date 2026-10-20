@@ -85,7 +85,7 @@ function genererHTML(results, { app, rapportUrl }) {
 
   // Version applicative lue par les setups (shared/utils/version-app.js) → bandeau titre
   // Plusieurs valeurs distinctes = déploiement pendant le run → toutes affichées
-  const versions = [...new Set((results.tests || [])
+  const versions = [...new Set([...(results.tests || []), ...(results.recap_projets || [])]
     .filter(t => t.version_app)
     .map(t => t.build_app
       ? `${t.version_app} — build du ${new Date(t.build_app).toLocaleString('fr-FR', { timeZone: 'Europe/Paris' })}`
