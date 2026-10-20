@@ -72,8 +72,8 @@ npx playwright test --config=config/playwright.config.js --project=tnr-chromium-
 # Mode debug
 npx playwright test --config=config/playwright.config.js --project=tnr-chromium-ua-compliance-v2 --headed --debug --grep "PTF_01"
 
-# Rapport HTML
-npx playwright show-report playwright-report
+# Rapport HTML — un par run : <TNR_SORTIES>\<machine>\test-output\runs\run-xxx\rapport-html (cf. config/sorties.js)
+npx playwright show-report "<dossier du run>\rapport-html"
 ```
 
 ---

@@ -46,6 +46,9 @@ SMTP_HOST=smtp.int.dns
 SMTP_PORT=25
 SMTP_FROM=devqtp02@ellisphere.com
 
+# Sorties (runs, data, rapports HTML) — un sous-dossier par machine ; absent = test-output\ local
+TNR_SORTIES=\\Pronas01\Dsi\ACT\Recettes-Qualification\QTP TNR\playwright
+
 # Destinataires par app (séparés par virgule)
 MAIL_COMPLIANCE_V2=prenom.nom@ellisphere.com
 MAIL_ELLIPRO_RISK=
@@ -148,13 +151,15 @@ npx playwright test --config=config/playwright.config.js --project=perf-recherch
 ### Rapport HTML
 
 ```powershell
-npx playwright show-report playwright-report
+# Un rapport par run, dans <TNR_SORTIES>\<machine>\test-output\runs\run-xxx\ (chemin affiché au début du run)
+npx playwright show-report "\\Pronas01\Dsi\ACT\Recettes-Qualification\QTP TNR\playwright\devqtp01\test-output\runs\run-20261020-150000\rapport-html"
 ```
 
 ### Email récap
 
 ```powershell
-node shared/mailer/send-report.js --app=compliance-v2 --env=ua --rapport=\\nas01\tnr\rapport\index.html
+# Bouton « Voir le rapport Playwright » vers rapport-html\index.html du run envoyé
+node shared/mailer/send-report.js --app=compliance-v2 --env=ua
 node shared/mailer/send-report.js --app=ellipro-risk --env=ua
 ```
 

@@ -44,7 +44,7 @@ function parseArgs() {
 }
 
 const args          = parseArgs();
-const DATA_DIR      = path.resolve(args.data || path.join(__dirname, '../../test-output/data'));
+const DATA_DIR      = path.resolve(args.data || path.join(require('../../config/sorties').OUTPUT_DIR, 'data'));
 const MACHINE_DEFAUT = args['machine-defaut'] || os.hostname();
 
 // ---------------------------------------------------------------------------

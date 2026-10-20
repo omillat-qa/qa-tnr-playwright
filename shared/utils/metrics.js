@@ -15,7 +15,7 @@ function getMetricsFile() {
   // Un fichier par worker (append JSONL) : deux workers ne s'écrasent plus
   const worker = process.env.TEST_PARALLEL_INDEX || '0';
   const runDir = process.env.TNR_RUN_DIR;
-  const dir = runDir && fs.existsSync(runDir) ? runDir : path.resolve(__dirname, '../../test-output');
+  const dir = runDir && fs.existsSync(runDir) ? runDir : require('../../config/sorties').OUTPUT_DIR;
   return path.join(dir, `metrics-w${worker}.jsonl`);
 }
 

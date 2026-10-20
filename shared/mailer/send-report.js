@@ -5,17 +5,19 @@
 //
 // Usage :
 //   node shared/mailer/send-report.js --app=compliance-v2
-//     → prend le run le plus récent dans test-output/runs/
+//     → prend le run le plus récent dans test-output/runs/ (NAS si TNR_SORTIES, cf. config/sorties.js)
 //
 //   node shared/mailer/send-report.js --app=compliance-v2 --run=run-20260512-143000
 //     → prend un run spécifique
 //
+//   Bouton « Voir le rapport » : par défaut <dossier du run>\rapport-html\index.html
 //   node shared/mailer/send-report.js --app=compliance-v2 --rapport=\\nas\...
-//     → ajoute un bouton cliquable vers le rapport HTML
+//     → force un autre rapport HTML
 
 const nodemailer = require('nodemailer');
 const fs         = require('fs');
 const path       = require('path');
+const { pathToFileURL } = require('url');
 
 (function chargerEnv() {
   const dotenv = require('dotenv');
@@ -72,13 +74,13 @@ function trouverDernierRun(runsDir, runId, { app, env } = {}) {
       if (tests.some(t => t.app === app && (!env || t.env === env))) return fichier;
     } catch { /* results.json illisible : run suivant */ }
   }
-  throw new Error(`Aucun run ${app}${env ? ` ${env}` : ''} trouvé dans test-output/runs/`);
+  throw new Error(`Aucun run ${app}${env ? ` ${env}` : ''} trouvé dans ${runsDir}`);
 }
 
 // ---------------------------------------------------------------------------
 // Génère le HTML de l'email
 // ---------------------------------------------------------------------------
-function genererHTML(results, { app, rapportUrl }) {
+function genererHTML(results, { app, rapport }) {
   const appConfig = APPS_CONFIG[app] || { label: app };
   const run       = results.run;
   const modules   = results.recap_modules  || [];
@@ -214,16 +216,19 @@ function genererHTML(results, { app, rapportUrl }) {
   // ---------------------------------------------------------------------------
   // Lien rapport
   // ---------------------------------------------------------------------------
-  const lienRapport = rapportUrl
+  // Chemin UNC affiché en clair : copiable dans l'explorateur si le client mail bloque les liens file://
+  const lienRapport = rapport
     ? `<p style="margin-top:20px">
-        <a href="${rapportUrl}" style="background:#2563eb;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:bold">
-          📊 Voir le rapport complet
+        <a href="${/^https?:/i.test(rapport) ? rapport : pathToFileURL(rapport).href}" style="background:#2563eb;color:white;padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:bold">
+          📊 Voir le rapport Playwright
         </a>
+      </p>
+      <p style="margin:12px 0 0;font-size:12px;color:#6b7280">
+        ${/^https?:/i.test(rapport) ? '' : `Si le lien ne s'ouvre pas, copier dans l'explorateur Windows :<br>
+        <code style="background:#e2e8f0;padding:2px 6px;border-radius:4px">${rapport}</code>`}
       </p>`
     : `<p style="margin-top:20px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:6px;padding:12px 16px;font-size:13px;color:#475569">
-        <strong>Rapport HTML local :</strong><br>
-        <code style="background:#e2e8f0;padding:2px 6px;border-radius:4px">npx playwright show-report</code>
-        &nbsp;— à lancer depuis la racine du projet
+        Rapport HTML Playwright non archivé pour ce run.
       </p>`;
 
   // ---------------------------------------------------------------------------
@@ -270,13 +275,17 @@ function genererHTML(results, { app, rapportUrl }) {
 async function main() {
   const args       = parseArgs();
   const app        = args.app || 'compliance-v2';
-  const rapportUrl = args.rapport || '';
   const runId      = args.run || null;
 
-  const runsDir     = path.resolve(__dirname, '../../test-output/runs');
+  const runsDir     = path.join(require('../../config/sorties').OUTPUT_DIR, 'runs');
   const resultsFile = trouverDernierRun(runsDir, runId, { app, env: args.env });
 
+  // Rapport HTML du run (à côté de results.json), sauf --rapport explicite
+  const rapportRun = path.join(path.dirname(resultsFile), 'rapport-html', 'index.html');
+  const rapport    = args.rapport || (fs.existsSync(rapportRun) ? rapportRun : '');
+
   console.log(`[mailer] Lecture : ${resultsFile}`);
+  console.log(`[mailer] Rapport : ${rapport || 'aucun (run sans rapport-html)'}`);
 
   const results   = JSON.parse(fs.readFileSync(resultsFile, 'utf8'));
   const appConfig = APPS_CONFIG[app] || { label: app, destinataires: [] };
@@ -293,7 +302,7 @@ async function main() {
       ? `❌ TNR ${appConfig.label} — ${run.echecs} échec(s) sur ${run.total}`
       : `⚠️ TNR ${appConfig.label} — run ${run.statut}, ${run.passes}/${run.total} exécuté(s)`;
 
-  const html        = genererHTML(results, { app, rapportUrl });
+  const html        = genererHTML(results, { app, rapport });
   const transporter = nodemailer.createTransport(SMTP);
   await transporter.sendMail({ from: FROM, to: appConfig.destinataires.join(', '), subject: sujet, html });
 

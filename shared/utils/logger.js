@@ -12,7 +12,7 @@ function getLogFile() {
   if (runDir && fs.existsSync(runDir)) {
     return path.join(runDir, 'log.txt');
   }
-  return path.resolve(__dirname, '../../test-output/log_tests.txt');
+  return path.join(require('../../config/sorties').OUTPUT_DIR, 'log_tests.txt');
 }
 
 function getHorodatageParis() {

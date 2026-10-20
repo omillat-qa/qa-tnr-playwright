@@ -5,9 +5,10 @@
 'use strict';
 
 const path           = require('path');
-const ROOT           = path.resolve(__dirname, '..');
 const { defineConfig } = require('@playwright/test');
 const { matrix }     = require('./apps.matrix');
+const { dossierRun } = require('./sorties');
+const RUN_DIR        = dossierRun();   // test-output\runs\run-xxx (NAS ou local, cf. sorties.js)
 
 module.exports = defineConfig({
 
@@ -26,12 +27,16 @@ module.exports = defineConfig({
 
   // Reporter : HTML natif Playwright + reporter TNR custom
   reporter: [
-    ['html', { open: 'never', outputFolder: path.join(ROOT, 'playwright-report') }],
+    // --list : pas de rapport HTML (sinon dossier de run fantôme sur le NAS)
+    ...(process.argv.includes('--list') ? [] : [['html', { open: 'never', outputFolder: path.join(RUN_DIR, 'rapport-html') }]]),
     ['list'],
     [require.resolve('../shared/reporter/tnr-reporter.js')],
   ],
 
   globalSetup: require.resolve('./global-setup.js'),
+
+  // Traces / screenshots d'échec : un dossier par run (plus écrasés au run suivant)
+  outputDir: path.join(RUN_DIR, 'test-results'),
 
   // Options screenshot/assertions
   expect: {

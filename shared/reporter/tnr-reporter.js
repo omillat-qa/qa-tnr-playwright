@@ -4,12 +4,14 @@
 // Reporter custom Playwright
 //
 // Structure de sortie :
-//   test-output/
+//   test-output/   (<TNR_SORTIES>\<machine>\test-output\ si défini, cf. config/sorties.js)
 //     runs/
 //       run-20260512-143000/        ← un dossier par run (timestamp)
 //         results.json              ← résultats consolidés tous projets
 //         metrics.json              ← métriques perf du run
 //         log.txt                   ← logs du run
+//         rapport-html/             ← rapport HTML Playwright du run
+//         test-results/             ← traces / screenshots des échecs
 //     history-[projet-perf].json    ← historique perf 90 jours
 //     history-[projet-perf].csv     ← idem CSV pour Excel
 //     data/
@@ -23,8 +25,7 @@ const os   = require('os');
 const { execSync } = require('child_process');
 const { lireVersionAppHttp } = require('../utils/version-app');
 
-const OUTPUT_DIR = path.resolve(__dirname, '../../test-output');
-const RUNS_DIR   = path.join(OUTPUT_DIR, 'runs');
+const { OUTPUT_DIR, dossierRun } = require('../../config/sorties');
 const DATA_DIR   = path.join(OUTPUT_DIR, 'data');
 
 // `--list` : Playwright appelle onBegin/onEnd sans rien exécuter → rien à archiver
@@ -43,12 +44,6 @@ const COMMIT_GIT = (() => {
   }
 })();
 
-function makeTimestamp(date) {
-  const d = date || new Date();
-  const pad = n => String(n).padStart(2, '0');
-  return `${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
-}
-
 class TnrReporter {
 
   constructor() {
@@ -63,8 +58,7 @@ class TnrReporter {
   onBegin(config, suite) {
     this.runDebut = Date.now();
 
-    const ts = makeTimestamp(new Date(this.runDebut));
-    this.runDir = path.join(RUNS_DIR, `run-${ts}`);
+    this.runDir = dossierRun();   // même dossier que rapport-html / test-results
     fs.mkdirSync(this.runDir, { recursive: true });
 
     process.env.TNR_RUN_DIR = this.runDir;
@@ -200,6 +194,7 @@ class TnrReporter {
     const output = {
       run: {
         id:       path.basename(this.runDir),
+        dossier:  this.runDir,   // emplacement réel (NAS ou repli local)
         machine:    MACHINE,
         commit_git: COMMIT_GIT,
         projets:  Object.keys(this.projetsMap),
