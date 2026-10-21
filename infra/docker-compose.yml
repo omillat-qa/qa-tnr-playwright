@@ -51,7 +51,7 @@ services:
       GF_USERS_ALLOW_SIGN_UP: "false"
       GF_AUTH_ANONYMOUS_ENABLED: "false"
       GF_DATE_FORMATS_DEFAULT_TIMEZONE: Europe/Paris
-      GF_SERVER_ROOT_URL: http://devqtp04.int.dns:3000
+      GF_SERVER_ROOT_URL: ${GF_ROOT_URL:-http://localhost:3000}   # autre hôte : GF_ROOT_URL dans infra/.env
       # Lu par provisioning/datasources/tnr-postgres.yml
       TNR_RO_PASSWORD: ${TNR_RO_PASSWORD}
     ports:
