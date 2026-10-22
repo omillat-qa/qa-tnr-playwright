@@ -1,0 +1,19 @@
+{
+  "recherche": {
+    "microsoft": {
+      "nom": "MICROSOFT FRANCE",
+      "siret": "32773318400516",
+      "ville": "ISSY-LES-MOULINEAUX"
+    },
+    "ellisphere": {
+      "_commentaire": "Sous surveillance dans le portefeuille du compte de test UA",
+      "nom": "ELLISPHERE",
+      "siret": "48275574100352",
+      "telephone": "0245784512"
+    },
+    "carrefour": {
+      "nom": "CARREFOUR",
+      "codePostal": "22500"
+    }
+  }
+}

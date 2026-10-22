@@ -138,7 +138,8 @@ Ne jamais merger ou pousser sur `main` sans instruction explicite.
 |------------|--------|
 | `[PTF_XX]` | Portefeuille Compliance |
 | `[TCH_XX]` | Tâches Compliance |
-| `[R_XXX]` | Auth / réseau Ellipro Risk |
+| `[AUT_XXX]` | Auth / réseau Ellipro Risk (Keycloak) |
+| `[R_XXX]` | Recherche Ellipro Risk (QUI / OÙ, recherche unique, avancée) |
 | `[PERF]` | Tests performance Solr |
 
 Tags obligatoires : `@tnr` sur tous les TNR, `@smoke` sur les tests critiques post-déploiement.

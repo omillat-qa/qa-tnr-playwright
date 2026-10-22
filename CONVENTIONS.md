@@ -19,8 +19,8 @@ qa-tnr-playwright/
 │       ├── pages/
 │       ├── setup/
 │       └── tests/
-│           ├── auth/    # auth.spec.js (R_001-R_012), network.spec.js
-│           └── recherche/
+│           ├── auth/    # auth.spec.js (AUT_001-AUT_012), network.spec.js (AUT_013)
+│           └── recherche/   # recherche.spec.js (R_001-R_016), perf-recherche.spec.js
 ├── config/
 │   ├── playwright.config.js
 │   ├── apps.matrix.js   # matrice browsers × envs × apps
@@ -81,7 +81,8 @@ Chaque test porte un ID fonctionnel issu du référentiel métier.
 |---------|-------------|---------|
 | `PTF_` | Portefeuille Compliance | `[PTF_01]` |
 | `TCH_` | Tâches Compliance | `[TCH_01]` |
-| `R_` | Auth / réseau Ellipro Risk | `[R_001]` |
+| `AUT_` | Auth / réseau Ellipro Risk (Keycloak) | `[AUT_001]` |
+| `R_` | Recherche Ellipro Risk | `[R_001]` |
 | `PERF` | Tests performance Solr | `[PERF]` |
 
 ### Suffixe de vue pour les tests multi-vues

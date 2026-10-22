@@ -29,13 +29,13 @@ test.describe('Auth Keycloak', () => {
   // Identifiants / erreurs
   // -------------------------------------------------------------------------
 
-  test('[R_001] @tnr @auth - identifiants invalides : message erreur FR/EN', async ({ page }, testInfo) => {
+  test('[AUT_001] @tnr @auth - identifiants invalides : message erreur FR/EN', async ({ page }, testInfo) => {
     const login = process.env.TNR_USERNAME;
     await submitCredentials(page, { username: login, password: 'wrong-password-123!' });
     await expectInvalidCredentialsMessage(page, testInfo);
   });
 
-  test('[R_002] @tnr @auth - langue EN : message erreur en anglais', async ({ page }, testInfo) => {
+  test('[AUT_002] @tnr @auth - langue EN : message erreur en anglais', async ({ page }, testInfo) => {
     const login = process.env.TNR_USERNAME;
     await ensureLanguage(page, 'en', testInfo);
     await submitCredentials(page, { username: login, password: 'wrong-password-123!' });
@@ -48,7 +48,7 @@ test.describe('Auth Keycloak', () => {
     }
   });
 
-  test('[R_003] @tnr @auth - champs vides : erreurs visibles', async ({ page }, testInfo) => {
+  test('[AUT_003] @tnr @auth - champs vides : erreurs visibles', async ({ page }, testInfo) => {
     await submitCredentials(page, { username: '', password: '' });
     await expectFormErrors(page, testInfo);
   });
@@ -57,7 +57,7 @@ test.describe('Auth Keycloak', () => {
   // Mot de passe oublié
   // -------------------------------------------------------------------------
 
-  test('[R_004] @tnr @auth - mot de passe oublié : navigation vers page reset', async ({ page }, testInfo) => {
+  test('[AUT_004] @tnr @auth - mot de passe oublié : navigation vers page reset', async ({ page }, testInfo) => {
     await goToForgotPassword(page, testInfo);
     const submitBtn = page.locator('button:has-text("Envoyer"), button:has-text("Submit")').first();
     try {
@@ -68,7 +68,7 @@ test.describe('Auth Keycloak', () => {
     }
   });
 
-  test('[R_005] @tnr @auth - lien retour connexion : libellé FR strict', async ({ page }, testInfo) => {
+  test('[AUT_005] @tnr @auth - lien retour connexion : libellé FR strict', async ({ page }, testInfo) => {
     await goToForgotPassword(page, testInfo);
     await ensureLanguage(page, 'fr', testInfo);
     const link = page.locator('a:has-text("Retour à la connexion")').first();
@@ -80,7 +80,7 @@ test.describe('Auth Keycloak', () => {
     }
   });
 
-  test('[R_006] @tnr @auth - lien retour connexion : libellé EN strict', async ({ page }, testInfo) => {
+  test('[AUT_006] @tnr @auth - lien retour connexion : libellé EN strict', async ({ page }, testInfo) => {
     await ensureLanguage(page, 'en', testInfo);
     await goToForgotPassword(page, testInfo);
     const link = page.locator('a:has-text("Back to Login")').first();
@@ -96,12 +96,12 @@ test.describe('Auth Keycloak', () => {
   // Libellés i18n (tolérants)
   // -------------------------------------------------------------------------
 
-  test('[R_007] @tnr @auth - libellés FR (bascule au besoin)', async ({ page }, testInfo) => {
+  test('[AUT_007] @tnr @auth - libellés FR (bascule au besoin)', async ({ page }, testInfo) => {
     await ensureLanguage(page, 'fr', testInfo);
     await expectLoginLabels(page, 'fr', testInfo);
   });
 
-  test('[R_008] @tnr @auth - libellés EN (bascule au besoin)', async ({ page }, testInfo) => {
+  test('[AUT_008] @tnr @auth - libellés EN (bascule au besoin)', async ({ page }, testInfo) => {
     await ensureLanguage(page, 'en', testInfo);
     await expectLoginLabels(page, 'en', testInfo);
   });
@@ -110,12 +110,12 @@ test.describe('Auth Keycloak', () => {
   // Libellés i18n (stricts NR)
   // -------------------------------------------------------------------------
 
-  test('[R_009] @tnr @auth - libellés FR STRICTS (détecte Email vs E-mail)', async ({ page }, testInfo) => {
+  test('[AUT_009] @tnr @auth - libellés FR STRICTS (détecte Email vs E-mail)', async ({ page }, testInfo) => {
     await ensureLanguage(page, 'fr', testInfo);
     await expectLoginLabelsStrict(page, 'fr', testInfo);
   });
 
-  test('[R_010] @tnr @auth - libellés EN STRICTS', async ({ page }, testInfo) => {
+  test('[AUT_010] @tnr @auth - libellés EN STRICTS', async ({ page }, testInfo) => {
     await ensureLanguage(page, 'en', testInfo);
     await expectLoginLabelsStrict(page, 'en', testInfo);
   });
@@ -124,7 +124,7 @@ test.describe('Auth Keycloak', () => {
   // Footer
   // -------------------------------------------------------------------------
 
-  test('[R_011] @tnr @auth - footer FR : ordre et href exacts', async ({ page }, testInfo) => {
+  test('[AUT_011] @tnr @auth - footer FR : ordre et href exacts', async ({ page }, testInfo) => {
     await ensureLanguage(page, 'fr', testInfo);
     await expectFooterLinksFR(page, testInfo);
   });
@@ -133,7 +133,7 @@ test.describe('Auth Keycloak', () => {
   // Bascule de langue dynamique
   // -------------------------------------------------------------------------
 
-  test('[R_012] @tnr @auth - bascule langue FR ⇄ EN ⇄ FR', async ({ page }, testInfo) => {
+  test('[AUT_012] @tnr @auth - bascule langue FR ⇄ EN ⇄ FR', async ({ page }, testInfo) => {
     const before = (await getCurrentLocale(page)) || 'fr';
     const target = before.startsWith('fr') ? 'en' : 'fr';
     await ensureLanguage(page, target, testInfo);

@@ -233,7 +233,8 @@ Pipeline nocturne (cron 02:00)
 |---------|-----|---------|
 | `PTF_` | Portefeuille Compliance | `[PTF_01]` |
 | `TCH_` | Tâches Compliance | `[TCH_01]` |
-| `R_` | Auth / réseau Ellipro Risk | `[R_001]` |
+| `AUT_` | Auth / réseau Ellipro Risk (Keycloak) | `[AUT_001]` |
+| `R_` | Recherche Ellipro Risk | `[R_001]` |
 | `PERF` | Tests performance | `[PERF]` |
 
 ### Tags

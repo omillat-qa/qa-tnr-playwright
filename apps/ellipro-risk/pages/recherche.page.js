@@ -4,8 +4,14 @@
 // Page Object — Recherche Ellipro Risk (Angular)
 // Mesure temps UX (affichage résultats) et temps POST (requête Solr)
 
+const { expect } = require('@playwright/test');
 const { ajouterLog } = require('../../../shared/utils/logger');
 const { enregistrer } = require('../../../shared/utils/metrics');
+
+// Les raisons sociales peuvent contenir plusieurs espaces d'affilée, que l'affichage fusionne
+const norm    = texte => texte.replace(/\s+/g, ' ').trim();
+const libelle = texte => norm(texte.replace(/^search/, ''));     // libellé d'une suggestion sans l'icône
+const valeur  = async champ => norm(await champ.inputValue());
 
 class RecherchePage {
 
@@ -19,6 +25,83 @@ class RecherchePage {
     this.carteResultat     = page.locator('#card-company-result').first();
     this.messageAucunResultat = page.locator('h6:has-text("Pas de résultat")').first();
     this.banniereResultats = page.getByRole('heading', { name: /\d+\s+résultat/ }).first();
+
+    // TNR recherche QUI / OÙ
+    this.champOu             = page.getByRole('combobox', { name: 'Où ? (Code Postal ou Ville)' });
+    this.loupe               = page.getByTestId('search-button');
+    this.resultats           = page.getByTestId('company-search-result');
+    this.nomEntreprise       = page.getByTestId('company-name');
+    this.libelleSurveillance = page.getByTestId('monitored-label');
+    // Le panneau d'autocomplétion contient aussi l'historique et les modes de recherche :
+    // les suggestions sont les options précédées de l'icône « search »
+    this.suggestions  = page.getByRole('option').filter({ has: page.locator('mat-icon', { hasText: /^search$/ }) });
+    // CSS : Material n'expose l'option active au clavier que par la classe .mat-mdc-option-active
+    this.optionActive = this.suggestions.and(page.locator('.mat-mdc-option-active'));
+    // CSS : panneau CDK de la recherche avancée, sans data-testid ni rôle exploitable
+    this.panneauAvance = page.locator('.cdk-overlay-pane');
+  }
+
+  // ---------------------------------------------------------------------------
+  // TNR recherche QUI / OÙ
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Accueil connecté, champ QUI prêt
+   * Bandeau cookies : il peut s'afficher après la redirection Keycloak, on attend donc
+   * le premier élément visible (bandeau OU champ). isVisible() n'attend pas.
+   * @param {string} baseURL
+   */
+  async ouvrirAccueil(baseURL) {
+    const page = this.page;
+    await page.goto(`${baseURL}/AppEllipro/`, { waitUntil: 'domcontentloaded' });
+
+    const btnCookies = page.getByTestId('acceptCookiesBtn')
+      .or(page.locator('#acceptCookiesBtn, button:has-text("J\'ACCEPTE")')).first();
+    await btnCookies.or(this.champRecherche).first().waitFor({ state: 'visible', timeout: 15000 });
+    if (await btnCookies.isVisible()) {
+      await btnCookies.click();
+      await page.waitForTimeout(300);
+    }
+
+    await expect(this.champRecherche).toBeVisible({ timeout: 15000 });
+  }
+
+  // Le contrôle de saisie est différé : on attend la loupe active avant de valider
+  async saisirQui(texte) {
+    await this.champRecherche.click();
+    await this.champRecherche.pressSequentially(texte);
+    await expect(this.loupe).toBeEnabled();
+  }
+
+  // QUI saisi, autocomplétion du QUI refermée, curseur dans le OÙ
+  async preparerOu(entreprise) {
+    await this.saisirQui(entreprise);
+    await this.champRecherche.press('Escape');
+    await expect(this.champOu).toBeEnabled();
+    await this.champOu.click();
+  }
+
+  async attendreResultats() {
+    await expect(this.page).toHaveURL(/\/search-company-result\/quick\//);
+    await expect(this.resultats.first()).toBeVisible();
+    return this.resultats;
+  }
+
+  // Libellés des suggestions affichées, normalisés
+  async libelles() {
+    return (await this.suggestions.allInnerTexts()).map(libelle);
+  }
+
+  /**
+   * Recherche avancée : les modes s'affichent dans le panneau ouvert au clic dans le QUI
+   * @param {string} mode   - libellé du bouton radio (ex: 'téléphone')
+   * @param {string} saisie
+   */
+  async rechercheAvancee(mode, saisie) {
+    await this.champRecherche.click();
+    await this.page.getByRole('radio', { name: mode }).click();
+    await this.panneauAvance.locator('input[type=text]:visible').first().fill(saisie);
+    await this.panneauAvance.getByRole('button', { name: 'RECHERCHE' }).click();
   }
 
   // ---------------------------------------------------------------------------
@@ -113,4 +196,4 @@ class RecherchePage {
   }
 }
 
-module.exports = { RecherchePage };
+module.exports = { RecherchePage, libelle, valeur };

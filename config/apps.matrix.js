@@ -59,8 +59,9 @@ function makeProjects(app, testDir, matrix, testMatch) {
       const project = {
         name: `tnr-${browser}-${env}-${app}`,
         testDir: path.join(ROOT, testDir),
-        // Les specs perf ont leurs propres projets perf-recherche-* (jamais parallélisés)
-        testIgnore: '**/perf-*.spec.js',
+        // Les specs perf ont leurs propres projets perf-recherche-* (jamais parallélisés) ;
+        // la recherche TNR a besoin d'une session : projet tnr-chromium-ua-recherche-ellipro-risk
+        testIgnore: ['**/perf-*.spec.js', '**/recherche/recherche.spec.js'],
         use: {
           ...COMMON_USE,
           ...BROWSERS[browser],
@@ -167,6 +168,24 @@ const matrix = [
     ua:   ['chromium'],
     prod: ['chromium'],
   }),
+
+  // ----------------------------------------------------------
+  // ELLIPRO RISK — TNR RECHERCHE (session setup-ellipro-risk-ua)
+  // ----------------------------------------------------------
+
+  {
+    name: 'tnr-chromium-ua-recherche-ellipro-risk',
+    testDir: path.join(ROOT, 'apps/ellipro-risk/tests/recherche'),
+    testMatch: '**/recherche.spec.js',
+    use: {
+      ...COMMON_USE,
+      browserName: 'chromium',
+      baseURL: getUrl('ellipro-risk', 'ua'),
+      storageState: AUTH['ellipro-risk-ua'],
+    },
+    dependencies: ['setup-ellipro-risk-ua'],
+    metadata: { app: 'ellipro-risk', env: 'ua', browser: 'chromium', feature: 'recherche' },
+  },
 
   // ----------------------------------------------------------
   // ELLIPRO RISK — PERF RECHERCHE SOLR

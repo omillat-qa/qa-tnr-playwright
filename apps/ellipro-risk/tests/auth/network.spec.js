@@ -43,7 +43,7 @@ function installNetworkGuard(page, { includeUrl = [], includeResourceTypes = new
 
 test.describe('Auth Keycloak - réseau', () => {
 
-  test('[R_013] @tnr @auth - aucune ressource CSS en 404 au chargement', async ({ page, baseURL }, testInfo) => {
+  test('[AUT_013] @tnr @auth - aucune ressource CSS en 404 au chargement', async ({ page, baseURL }, testInfo) => {
     const guard = installNetworkGuard(page, {
       includeUrl: [/fonts\.css(\?|$)/i],
       includeResourceTypes: new Set(['stylesheet']),

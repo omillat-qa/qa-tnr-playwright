@@ -3,7 +3,7 @@
 #
 #   powershell -NoProfile -ExecutionPolicy Bypass -File C:\Projects\qa-tnr-playwright\scripts\campagne-quotidienne.ps1 -Campagne tnr-compliance-ua
 #
-# Campagnes : tnr-compliance-ua | perf-compliance-ua | perf-ellipro-ua (table $campagnes ci-dessous)
+# Campagnes : tnr-compliance-ua | tnr-ellipro-recherche-ua | perf-compliance-ua | perf-ellipro-ua (table $campagnes ci-dessous)
 #
 # Sorties : comme un run manuel (TNR_SORTIES de .env.local → NAS\<machine>\test-output), importées par la tâche
 # « TNR import PostgreSQL » du poste qui héberge PostgreSQL.
@@ -13,7 +13,7 @@
 
 param(
   [Parameter(Mandatory)]
-  [ValidateSet('tnr-compliance-ua', 'perf-compliance-ua', 'perf-ellipro-ua')]
+  [ValidateSet('tnr-compliance-ua', 'tnr-ellipro-recherche-ua', 'perf-compliance-ua', 'perf-ellipro-ua')]
   [string]$Campagne
 )
 
@@ -32,6 +32,7 @@ $campagnes = @{
       'tnr-chromium-ua-admin-taches-compliance-v2'
     )
   }
+  'tnr-ellipro-recherche-ua' = @{ App = 'ellipro-risk'; Env = 'ua'; Projets = @('tnr-chromium-ua-recherche-ellipro-risk') }
   'perf-compliance-ua' = @{ App = 'compliance-v2'; Env = 'ua'; Projets = @('perf-recherche-ua-compliance-v2') }
   'perf-ellipro-ua'    = @{ App = 'ellipro-risk';  Env = 'ua'; Projets = @('perf-recherche-ua-ellipro-risk') }
 }
