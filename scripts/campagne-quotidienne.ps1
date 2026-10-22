@@ -1,4 +1,4 @@
-# scripts/campagne-quotidienne.ps1
+﻿# scripts/campagne-quotidienne.ps1
 # Campagne TNR planifiée (tâche Windows) : tests Playwright puis email du rapport
 #
 #   powershell -NoProfile -ExecutionPolicy Bypass -File C:\Projects\qa-tnr-playwright\scripts\campagne-quotidienne.ps1 -Campagne tnr-compliance-ua
