@@ -494,7 +494,7 @@
           "editorMode": "code",
           "rawQuery": true,
           "format": "time_series",
-          "rawSql": "SELECT $__timeGroupAlias(debut, 1d), app AS metric,\n         round(100.0 * sum(passes) / nullif(sum(total), 0), 1) AS value\n  FROM tnr.v_runs WHERE $__timeFilter(debut) AND app IN (${app:sqlstring}) AND env IN (${env:sqlstring}) AND machine IN (${machine:sqlstring})\n  GROUP BY 1, 2 ORDER BY 1"
+          "rawSql": "SELECT date_trunc('day', debut, 'Europe/Paris') AS time, app AS metric,\n         round(100.0 * sum(passes) / nullif(sum(total), 0), 1) AS value\n  FROM tnr.v_runs WHERE $__timeFilter(debut) AND app IN (${app:sqlstring}) AND env IN (${env:sqlstring}) AND machine IN (${machine:sqlstring})\n  GROUP BY 1, 2 ORDER BY 1"
         }
       ],
       "options": {
@@ -553,7 +553,7 @@
           "editorMode": "code",
           "rawQuery": true,
           "format": "time_series",
-          "rawSql": "SELECT $__timeGroupAlias(debut, 1d), sum(echecs) AS \"Échecs\", sum(flaky) AS \"Flaky\"\n  FROM tnr.v_runs WHERE $__timeFilter(debut) AND app IN (${app:sqlstring}) AND env IN (${env:sqlstring}) AND machine IN (${machine:sqlstring})\n  GROUP BY 1 ORDER BY 1"
+          "rawSql": "SELECT date_trunc('day', debut, 'Europe/Paris') AS time, sum(echecs) AS \"Échecs\", sum(flaky) AS \"Flaky\"\n  FROM tnr.v_runs WHERE $__timeFilter(debut) AND app IN (${app:sqlstring}) AND env IN (${env:sqlstring}) AND machine IN (${machine:sqlstring})\n  GROUP BY 1 ORDER BY 1"
         }
       ],
       "options": {
@@ -620,6 +620,112 @@
       }
     },
     {
+      "id": 12,
+      "type": "timeseries",
+      "title": "Réussite par run",
+      "description": "Un point par run (heure de début), une courbe par application et machine. Clic sur un point : TNR — Détail sur ce run.",
+      "datasource": {
+        "type": "grafana-postgresql-datasource",
+        "uid": "tnr-postgres"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 12
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "grafana-postgresql-datasource",
+            "uid": "tnr-postgres"
+          },
+          "refId": "A",
+          "editorMode": "code",
+          "rawQuery": true,
+          "format": "table",
+          "rawSql": "SELECT min(debut) AS time, app || ' · ' || machine AS serie, run_id AS run,\n         round(100.0 * sum(passes) / nullif(sum(total), 0), 1) AS \"Réussite\"\n  FROM tnr.v_runs WHERE $__timeFilter(debut) AND app IN (${app:sqlstring}) AND env IN (${env:sqlstring}) AND machine IN (${machine:sqlstring})\n  GROUP BY run_id, app, machine ORDER BY 1"
+        }
+      ],
+      "transformations": [
+        {
+          "id": "partitionByValues",
+          "options": {
+            "fields": [
+              "serie"
+            ],
+            "keepFields": false,
+            "naming": {
+              "asLabels": true
+            }
+          }
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "lastNotNull",
+            "min",
+            "count"
+          ]
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percent",
+          "min": 0,
+          "max": 100,
+          "displayName": "${__field.labels.serie}",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 0,
+            "showPoints": "always",
+            "pointSize": 7,
+            "spanNulls": true,
+            "stacking": {
+              "mode": "none"
+            },
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            }
+          },
+          "links": [
+            {
+              "title": "Voir le run ${__data.fields.run}",
+              "url": "/d/tnr-detail/tnr-detail?var-run=${__data.fields.run}&${app:queryparam}&${env:queryparam}&${machine:queryparam}&${__url_time_range}"
+            }
+          ]
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "run"
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": true,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "id": 8,
       "type": "table",
       "title": "Derniers runs",
@@ -632,7 +738,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 12
+        "y": 20
       },
       "targets": [
         {
@@ -787,7 +893,7 @@
         "h": 10,
         "w": 24,
         "x": 0,
-        "y": 22
+        "y": 30
       },
       "targets": [
         {
@@ -851,7 +957,7 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 32
+        "y": 40
       },
       "targets": [
         {
@@ -914,7 +1020,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 41
+        "y": 49
       },
       "targets": [
         {
